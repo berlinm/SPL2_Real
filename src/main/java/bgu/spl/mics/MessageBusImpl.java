@@ -13,14 +13,18 @@ public class MessageBusImpl implements MessageBus {
 
 	private ConcurrentHashMap<MicroService,BlockingQueue<Message>> MicroQueues=new ConcurrentHashMap<MicroService,BlockingQueue<Message>>();
 
-	//implement of the singleton design pattern need to be implemented
+	//implement of the singleton design pattern
+	private static class SingletonHolder{
+		private static MessageBusImpl instance=new MessageBusImpl();
+	}
 	public static MessageBusImpl getInstance(){
 
-		return null;
+		return SingletonHolder.instance;
 	}
 
 	@Override
 	public <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {
+		BlockingQueue<Message> curr=MicroQueues.get(m); //not finished
 	}
 
 	@Override

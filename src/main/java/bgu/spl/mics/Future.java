@@ -14,6 +14,8 @@ public class Future<T> {
 
 	private T result;
 	private boolean b;
+	private Object _lockThread;
+
 	
 	/**
 	 * This should be the the only public constructor in this class.
@@ -22,6 +24,7 @@ public class Future<T> {
 
 		result=null;
 		b=false;
+		_lockThread=new Object();
 	}
 	
 	/**
@@ -33,8 +36,14 @@ public class Future<T> {
      * 	       
      */
 	public  T get() {
+		if(result==null) {
+			try {
+				_lockThread.wait();
+			}
+			catch (InterruptedException e){e.printStackTrace();}
+		}
+		return result;
 
-		return null;
 
 	}
 	
@@ -42,9 +51,8 @@ public class Future<T> {
      * Resolves the result of this Future object.
      */
 	public void resolve (T result) {
-		//TODO: implement this.
-
-
+		this.result=result;
+		_lockThread.notifyAll();
 		b=true;
 	}
 	
@@ -67,8 +75,14 @@ public class Future<T> {
      *         elapsed, return null.
      */
 	public T get(long timeout, TimeUnit unit) {
-		//TODO: implement this.
-		return null;
+		if(result==null) {
+			try {
+				_lockThread.wait(unit.toMillis(timeout));
+			}
+			catch (InterruptedException e){e.printStackTrace();}
+		}
+		return result;
+
 	}
 
 }
