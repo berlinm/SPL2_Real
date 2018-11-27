@@ -1,5 +1,9 @@
 package bgu.spl.mics;
 
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
+
 /**
  * The {@link MessageBusImpl class is the implementation of the MessageBus interface.
  * Write your implementation here!
@@ -7,10 +11,16 @@ package bgu.spl.mics;
  */
 public class MessageBusImpl implements MessageBus {
 
+	private ConcurrentHashMap<MicroService,BlockingQueue<Message>> MicroQueues=new ConcurrentHashMap<MicroService,BlockingQueue<Message>>();
+
+	//implement of the singleton design pattern need to be implemented
+	public static MessageBusImpl getInstance(){
+
+		return null;
+	}
+
 	@Override
 	public <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -40,13 +50,15 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public void register(MicroService m) {
-		// TODO Auto-generated method stub
+		BlockingQueue<Message> myqueue=new LinkedBlockingQueue<Message>();
+		MicroQueues.put(m,myqueue);
 
 	}
 
 	@Override
 	public void unregister(MicroService m) {
-		// TODO Auto-generated method stub
+
+		MicroQueues.remove(m);// maybe works :()
 
 	}
 

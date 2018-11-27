@@ -1,5 +1,7 @@
 package bgu.spl.mics;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * The MicroService is an abstract class that any micro-service in the system
  * must extend. The abstract MicroService class is responsible to get and
@@ -22,6 +24,8 @@ public abstract class MicroService implements Runnable {
 
     private boolean terminated = false;
     private final String name;
+    private ConcurrentHashMap<Class<Event>, Callback> Eventhash=new ConcurrentHashMap<Class<Event>, Callback>();
+    private ConcurrentHashMap<Class<Broadcast>,Callback> BroadcastHash=new ConcurrentHashMap<Class<Broadcast>,Callback>();
 
     /**
      * @param name the micro-service name (used mainly for debugging purposes -
@@ -53,7 +57,9 @@ public abstract class MicroService implements Runnable {
      *                 queue.
      */
     protected final <T, E extends Event<T>> void subscribeEvent(Class<E> type, Callback<E> callback) {
-        //TODO: implement this.
+        MessageBus messageBus=MessageBusImpl.getInstance();
+        messageBus.subscribeEvent(type,this);
+        Eventhash.put((Class<Event>)type,callback); //not sure about what ive done here
     }
 
     /**
@@ -77,7 +83,9 @@ public abstract class MicroService implements Runnable {
      *                 queue.
      */
     protected final <B extends Broadcast> void subscribeBroadcast(Class<B> type, Callback<B> callback) {
-        //TODO: implement this.
+        MessageBus messageBus=MessageBusImpl.getInstance();
+        messageBus.subscribeBroadcast(type,this);
+        BroadcastHash.put((Class<Broadcast>)type,callback); //same
     }
 
     /**
@@ -93,8 +101,10 @@ public abstract class MicroService implements Runnable {
      * 	       			null in case no micro-service has subscribed to {@code e.getClass()}.
      */
     protected final <T> Future<T> sendEvent(Event<T> e) {
-        //TODO: implement this.
-        return null; //TODO: delete this line :)
+        MessageBus messageBus=MessageBusImpl.getInstance();
+        Future<T> ret=messageBus.sendEvent(e); //note for later : need to support theards(not supporting now ) cant use synchronized !!
+
+        return ret;
     }
 
     /**
@@ -104,7 +114,9 @@ public abstract class MicroService implements Runnable {
      * @param b The broadcast message to send
      */
     protected final void sendBroadcast(Broadcast b) {
-        //TODO: implement this.
+
+        MessageBus messageBus=MessageBusImpl.getInstance();
+        messageBus.sendBroadcast(b);
     }
 
     /**
@@ -118,7 +130,8 @@ public abstract class MicroService implements Runnable {
      *               {@code e}.
      */
     protected final <T> void complete(Event<T> e, T result) {
-        //TODO: implement this.
+        MessageBus messageBus=MessageBusImpl.getInstance();
+        messageBus.complete(e,result);
     }
 
     /**
