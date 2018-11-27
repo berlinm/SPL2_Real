@@ -8,6 +8,7 @@ public class MessageBusTest {
 
     @Test
     public void subscribeEvent() {
+
     }
 
     @Test

@@ -21,39 +21,24 @@ public class InventoryTest {
 
     @Test
     public void getInstance() {
-        if (!(this.testInventory instanceof Inventory))
-            throw new TypeMismatchException();
+        assertNotNull(Inventory.getInstance());
     }
 
     @Test
-    public void load() {
-        BookInventoryInfo[] bookInventoryInfos = new BookInventoryInfo[0];
-        this.testInventory.load(bookInventoryInfos);
-        if (!this.testInventory.isEmpty())
-            throw new ExceptionInInitializerError();
-        boolean nullTested = false;
-        bookInventoryInfos = null;
-        try {
-            this.testInventory.load(bookInventoryInfos);
-        }
-        catch (Exception e){
-            nullTested = true;
-        }
-        if (!nullTested) throw new ExceptionInInitializerError();
+    public void load_AvailibiltyAndGetPrice_Test() {
+        BookInventoryInfo[] bookInventoryInfos = new BookInventoryInfo[1];
+        bookInventoryInfos[0] = new BookInventoryInfo("Harry Potter", 8, 80);
+        testInventory.load(bookInventoryInfos);
+        assertEquals(8, testInventory.checkAvailabiltyAndGetPrice("Harry Potter"));
     }
 
     @Test
-    public void take() throws Exception {
-        int prev = this.testInventory.getTotalNumberOfBooks();
-        if (testInventory.take("Harry Potter").equals(OrderResult.valueOf("NOT_IN_STOCK")) && prev != this.testInventory.getTotalNumberOfBooks())
-            throw new Exception("If a book is not in stock, the number of books should remain the same");
-    }
-
-    @Test
-    public void checkAvailabiltyAndGetPrice() {
-    }
-
-    @Test
-    public void printInventoryToFile() {
+    public void take(){
+        assertTrue(testInventory.take("Harry Poker").equals(OrderResult.NOT_IN_STOCK));
+        BookInventoryInfo[] bookInventoryInfos = new BookInventoryInfo[1];
+        bookInventoryInfos[0] = new BookInventoryInfo("Harry Potter", 8, 80);
+        testInventory.load(bookInventoryInfos);
+        assertTrue(testInventory.take("Harry Potter").equals(OrderResult.SUCCESSFULLY_TAKEN));
+        assertTrue(testInventory.take("Harry Potter").equals(OrderResult.NOT_IN_STOCK));
     }
 }

@@ -10,7 +10,11 @@ public class BookInventoryInfo {
 	private String bookTitle;
 	private int amountInInventory;
 	private int price;
-
+	public BookInventoryInfo(String bookTitle, int amountInInventory, int price){
+		this.bookTitle = bookTitle;
+		this.amountInInventory = amountInInventory;
+		this.price = price;
+	}
 	/**
      * Retrieves the title of this book.
      * <p>
