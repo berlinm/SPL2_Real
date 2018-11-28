@@ -3,6 +3,7 @@ package bgu.spl.mics;
 import org.junit.*;
 
 import java.lang.reflect.Array;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -42,5 +43,14 @@ public class FutureTest {
 
     @Test
     public void get1() {
+
+        Future<String> stringFuture1=new Future<String>();
+        stringFuture1.resolve("TIME");
+        Assert.assertEquals("TIME",stringFuture1.get(0,TimeUnit.SECONDS));
+        Future<Integer> intFuture=new Future<Integer>();
+        Integer it=new Integer(5);
+        intFuture.resolve(it);
+        Assert.assertEquals(it,intFuture.get(10,TimeUnit.SECONDS));
+
     }
 }

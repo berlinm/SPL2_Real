@@ -36,7 +36,7 @@ public class Future<T> {
      * 	       
      */
 	public  T get() {
-		if(result==null) {
+		while (result==null) {
 			try {
 				_lockThread.wait();
 			}
@@ -75,7 +75,7 @@ public class Future<T> {
      *         elapsed, return null.
      */
 	public T get(long timeout, TimeUnit unit) {
-		if(result==null) {
+		while (result==null) {
 			try {
 				_lockThread.wait(unit.toMillis(timeout));
 			}

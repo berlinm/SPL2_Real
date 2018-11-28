@@ -1,5 +1,6 @@
 package bgu.spl.mics;
 
+import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -11,7 +12,9 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class MessageBusImpl implements MessageBus {
 
-	private ConcurrentHashMap<MicroService,BlockingQueue<Message>> MicroQueues=new ConcurrentHashMap<MicroService,BlockingQueue<Message>>();
+	private ConcurrentHashMap<MicroService,BlockingQueue<Class<?>>> EvenetSubscribe=new ConcurrentHashMap<MicroService,BlockingQueue<Class<?>>>();
+	private ConcurrentHashMap<MicroService,BlockingDeque<Class<?>>> BroadcastSubscribe=new ConcurrentHashMap<MicroService,BlockingDeque<Class<?>>>();
+	private ConcurrentHashMap<MicroService,BlockingQueue<Message>> FetchMap =new ConcurrentHashMap<MicroService,BlockingQueue<Message>>();
 
 	//implement of the singleton design pattern
 	private static class SingletonHolder{
@@ -24,13 +27,16 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {
-		BlockingQueue<Message> curr=MicroQueues.get(m); //not finished
+		BlockingQueue<Class<?>> curr=EvenetSubscribe.get(m);
+		curr.add(type);
+
+
 	}
 
 	@Override
 	public void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
-		// TODO Auto-generated method stub
-
+		BlockingDeque<Class<?>> curr=BroadcastSubscribe.get(m);
+		curr.add(type);
 	}
 
 	@Override
@@ -41,28 +47,39 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public void sendBroadcast(Broadcast b) {
-		// TODO Auto-generated method stub
+	    Boolean isfound;
+        for(MicroService m : BroadcastSubscribe.keySet()){
+            isfound=false;
+            BlockingDeque<Class<?>> T=BroadcastSubscribe.get(m);
+            if(T.contains(b)){
+                isfound=true;
+            }
 
+            if(isfound){
+                FetchMap.get(m).add(b);
+            }
+        }
 	}
 
 	
 	@Override
 	public <T> Future<T> sendEvent(Event<T> e) {
-		// TODO Auto-generated method stub
-		return null;
+		Future<T> ANS=new Future<T>();
+
+		return ANS;
 	}
 
 	@Override
 	public void register(MicroService m) {
 		BlockingQueue<Message> myqueue=new LinkedBlockingQueue<Message>();
-		MicroQueues.put(m,myqueue);
+		FetchMap.put(m,myqueue);
 
 	}
 
 	@Override
 	public void unregister(MicroService m) {
 
-		MicroQueues.remove(m);// maybe works :()
+		FetchMap.remove(m);// maybe works :()
 
 	}
 
