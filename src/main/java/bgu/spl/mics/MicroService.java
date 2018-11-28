@@ -133,7 +133,6 @@ public abstract class MicroService implements Runnable {
         MessageBus messageBus=MessageBusImpl.getInstance();
         messageBus.complete(e,result);
     }
-
     /**
      * this method is called once when the event loop starts.
      */

@@ -12,82 +12,63 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class MessageBusImpl implements MessageBus {
 
-	private ConcurrentHashMap<Class<?>,BlockingQueue<MicroService>> EvenetSubscribe=new ConcurrentHashMap<Class<?>, BlockingQueue<MicroService>>();
-	private ConcurrentHashMap<MicroService,BlockingDeque<Class<?>>> BroadcastSubscribe=new ConcurrentHashMap<MicroService,BlockingDeque<Class<?>>>();
-	private ConcurrentHashMap<MicroService,BlockingQueue<Message>> FetchMap =new ConcurrentHashMap<MicroService,BlockingQueue<Message>>();
+	private ConcurrentHashMap<Class<? extends Event<?>>,BlockingQueue<MicroService>> EvenetSubscribe = new ConcurrentHashMap<Class<? extends Event<?>>, BlockingQueue<MicroService>>();
+	private ConcurrentHashMap<Class<? extends Broadcast>,BlockingDeque<MicroService>> BroadcastSubscribe = new ConcurrentHashMap<Class<? extends Broadcast>,BlockingDeque<MicroService>>();
+	private ConcurrentHashMap<MicroService,BlockingQueue<Message>> srvQueue = new ConcurrentHashMap<MicroService,BlockingQueue<Message>>();
+	private ConcurrentHashMap<Event<?>, Future> EventFut = new ConcurrentHashMap<Event<?>, Future>();
 
 	//implement of the singleton design pattern
 	private static class SingletonHolder{
 		private static MessageBusImpl instance=new MessageBusImpl();
 	}
 	public static MessageBusImpl getInstance(){
-
 		return SingletonHolder.instance;
 	}
 
 	@Override
 	public synchronized <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {//not sure about Synchronized
-	    BlockingQueue<MicroService> curr=EvenetSubscribe.get(type);
-	    curr.add(m);
-
-
+	    EvenetSubscribe.get(type).add(m);
 	}
 
 	@Override
 	public synchronized void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
-		BlockingDeque<Class<?>> curr=BroadcastSubscribe.get(m);
-		curr.add(type);
+		BroadcastSubscribe.get(type).add(m);
 	}
 
 	@Override
 	public <T> void complete(Event<T> e, T result) {
-		// TODO Auto-generated method stub
-
+		this.EventFut.get(e).resolve(result);
+		this.EventFut.remove(e); //not sure
 	}
 
 	@Override
 	public void sendBroadcast(Broadcast b) {
-	    Boolean isfound;
-        for(MicroService m : BroadcastSubscribe.keySet()){
-            isfound=false;
-            BlockingDeque<Class<?>> T=BroadcastSubscribe.get(m);
-            if(T.contains(b)){
-                isfound=true;
-            }
-
-            if(isfound){
-                FetchMap.get(m).add(b);
-            }
+        for(MicroService m : BroadcastSubscribe.get(b)){
+            m.sendBroadcast(b);
         }
 	}
 
 	
 	@Override
 	public synchronized  <T> Future<T> sendEvent(Event<T> e) { //again not sure about synchronized
-		Future<T> ANS=new Future<T>();
-
-		BlockingQueue<MicroService> mic=this.EvenetSubscribe.get(e);
-		MicroService m=mic.remove();
-		mic.add(m);
-
-		FetchMap.get(m).add(e);
-
-		//idk how they expect me to return future
-
-		return ANS;
+		Future<T> res=new Future<T>();
+		MicroService m = this.EvenetSubscribe.get(e).remove();
+		this.EvenetSubscribe.get(e).add(m);
+		srvQueue.get(m).add(e);
+		this.EventFut.put(e, res);
+		return res;
 	}
 
 	@Override
 	public void register(MicroService m) {
 		BlockingQueue<Message> myqueue=new LinkedBlockingQueue<Message>();
-		FetchMap.put(m,myqueue);
-
+		srvQueue.put(m,myqueue);
 	}
 
 	@Override
 	public void unregister(MicroService m) {
 
-		FetchMap.remove(m);// maybe works :()
+		srvQueue.remove(m);// maybe works :()
 
 	}
 
