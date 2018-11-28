@@ -12,7 +12,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class MessageBusImpl implements MessageBus {
 
-	private ConcurrentHashMap<MicroService,BlockingQueue<Class<?>>> EvenetSubscribe=new ConcurrentHashMap<MicroService,BlockingQueue<Class<?>>>();
+	private ConcurrentHashMap<Class<?>,BlockingQueue<MicroService>> EvenetSubscribe=new ConcurrentHashMap<Class<?>, BlockingQueue<MicroService>>();
 	private ConcurrentHashMap<MicroService,BlockingDeque<Class<?>>> BroadcastSubscribe=new ConcurrentHashMap<MicroService,BlockingDeque<Class<?>>>();
 	private ConcurrentHashMap<MicroService,BlockingQueue<Message>> FetchMap =new ConcurrentHashMap<MicroService,BlockingQueue<Message>>();
 
@@ -26,15 +26,15 @@ public class MessageBusImpl implements MessageBus {
 	}
 
 	@Override
-	public <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {
-		BlockingQueue<Class<?>> curr=EvenetSubscribe.get(m);
-		curr.add(type);
+	public synchronized <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {//not sure about Synchronized
+	    BlockingQueue<MicroService> curr=EvenetSubscribe.get(type);
+	    curr.add(m);
 
 
 	}
 
 	@Override
-	public void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
+	public synchronized void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
 		BlockingDeque<Class<?>> curr=BroadcastSubscribe.get(m);
 		curr.add(type);
 	}
@@ -63,8 +63,16 @@ public class MessageBusImpl implements MessageBus {
 
 	
 	@Override
-	public <T> Future<T> sendEvent(Event<T> e) {
+	public synchronized  <T> Future<T> sendEvent(Event<T> e) { //again not sure about synchronized
 		Future<T> ANS=new Future<T>();
+
+		BlockingQueue<MicroService> mic=this.EvenetSubscribe.get(e);
+		MicroService m=mic.remove();
+		mic.add(m);
+
+		FetchMap.get(m).add(e);
+
+		//idk how they expect me to return future
 
 		return ANS;
 	}
