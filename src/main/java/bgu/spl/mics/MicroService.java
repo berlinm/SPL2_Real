@@ -153,17 +153,31 @@ public abstract class MicroService implements Runnable {
     public final String getName() {
         return name;
     }
-
     /**
      * The entry point of the micro-service. TODO: you must complete this code
      * otherwise you will end up in an infinite loop.
      */
     @Override
     public final void run() {
+        MessageBus berlinBus = MessageBusImpl.getInstance();
         initialize();
         while (!terminated) {
-            System.out.println("NOT IMPLEMENTED!!!"); //TODO: you should delete this line :)
+            try
+            {
+                Message m = berlinBus.awaitMessage(this);
+                if (m.isBroadcast()){
+                    Broadcast b = (Broadcast) m;
+                    this.BroadcastHash.get(b).call(m); //not sure what a callback gets as an argument, probbably message is correct
+                }
+                else
+                {
+                    Event e = (Event)m;
+                    this.Eventhash.get(e).call(m); //same
+                }
+            }
+            catch (InterruptedException e){
+                this.terminate();
+            }
         }
     }
-
 }

@@ -12,7 +12,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class MessageBusImpl implements MessageBus {
 
-	private ConcurrentHashMap<Class<? extends Event<?>>,BlockingQueue<MicroService>> EvenetSubscribe = new ConcurrentHashMap<Class<? extends Event<?>>, BlockingQueue<MicroService>>();
+	private ConcurrentHashMap<Class<? extends Event<?>>,BlockingQueue<MicroService>> EventSubscribe = new ConcurrentHashMap<Class<? extends Event<?>>, BlockingQueue<MicroService>>();
 	private ConcurrentHashMap<Class<? extends Broadcast>,BlockingDeque<MicroService>> BroadcastSubscribe = new ConcurrentHashMap<Class<? extends Broadcast>,BlockingDeque<MicroService>>();
 	private ConcurrentHashMap<MicroService,BlockingQueue<Message>> srvQueue = new ConcurrentHashMap<MicroService,BlockingQueue<Message>>();
 	private ConcurrentHashMap<Event<?>, Future> EventFut = new ConcurrentHashMap<Event<?>, Future>();
@@ -27,7 +27,7 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public  <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) { //not sure about Synchronized
-	    EvenetSubscribe.get(type).add(m);
+	    EventSubscribe.get(type).add(m);
 	}
 
 	@Override
@@ -40,25 +40,24 @@ public class MessageBusImpl implements MessageBus {
 		this.EventFut.get(e).resolve(result);
 		this.EventFut.remove(e); //not sure
 	}
-	//TODO: think how to do thrad safe
 	@Override
 	public void sendBroadcast(Broadcast b) {
         for(MicroService m : BroadcastSubscribe.get(b)){
-        	srvQueue.get(m).add(b);
+            try {
+                srvQueue.get(m).add(b);
+            }
+            catch (NullPointerException exception){ /*Other thread deleted m*/ }
         }
 	}
-
-	
 	@Override
 	public synchronized  <T> Future<T> sendEvent(Event<T> e) { //again not sure about synchronized
 		Future<T> res=new Future<T>();
-		MicroService m = this.EvenetSubscribe.get(e).remove();
-		this.EvenetSubscribe.get(e).add(m);
+		MicroService m = this.EventSubscribe.get(e).remove();
+		this.EventSubscribe.get(e).add(m);
 		srvQueue.get(m).add(e);
 		this.EventFut.put(e, res);
 		return res;
 	}
-
 	@Override
 	public void register(MicroService m) {
 		BlockingQueue<Message> myqueue=new LinkedBlockingQueue<Message>();
@@ -67,14 +66,33 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public synchronized void unregister(MicroService m) {
+		//lets remove all broadcasts subscriptions
+        for (Class c:this.BroadcastSubscribe.keySet()){
+            for (MicroService microService:this.BroadcastSubscribe.get(c)){
+                if (microService.equals(m)){
+                    this.BroadcastSubscribe.get(c).remove(m);
+                }
+            }
+        }
+        //lets remove all event subscriptions
+        for (Class c:this.EventSubscribe.keySet()){
+            for (MicroService microService:this.EventSubscribe.get(c)){
+                if (microService.equals(m)){
+                    this.EventSubscribe.get(c).remove(m);
+                }
+            }
+        }
 		srvQueue.remove(m);// maybe works :()
-
+		//					you are an idiot
 	}
-
+	//I think that because each MicroService is calling this method with (this) as argument, no concurrency problems here,
+	//but needs to be checked again
 	@Override
 	public Message awaitMessage(MicroService m) throws InterruptedException {
-		// TODO Auto-generated method stub
-		return null;
+			while (this.srvQueue.get(m).isEmpty()) {
+				wait();
+			}
+			return this.srvQueue.get(m).remove();
 	}
 
 	
