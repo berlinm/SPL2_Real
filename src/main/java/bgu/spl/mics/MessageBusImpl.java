@@ -26,12 +26,12 @@ public class MessageBusImpl implements MessageBus {
 	}
 
 	@Override
-	public synchronized <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {//not sure about Synchronized
+	public <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) { //not sure about Synchronized
 	    EvenetSubscribe.get(type).add(m);
 	}
 
 	@Override
-	public synchronized void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
+	public void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
 		BroadcastSubscribe.get(type).add(m);
 	}
 
@@ -40,11 +40,11 @@ public class MessageBusImpl implements MessageBus {
 		this.EventFut.get(e).resolve(result);
 		this.EventFut.remove(e); //not sure
 	}
-
+	//TODO: think how to do thrad safe
 	@Override
 	public void sendBroadcast(Broadcast b) {
         for(MicroService m : BroadcastSubscribe.get(b)){
-            m.sendBroadcast(b);
+        	srvQueue.get(m).add(b);
         }
 	}
 
@@ -66,8 +66,7 @@ public class MessageBusImpl implements MessageBus {
 	}
 
 	@Override
-	public void unregister(MicroService m) {
-
+	public synchronized void unregister(MicroService m) {
 		srvQueue.remove(m);// maybe works :()
 
 	}
