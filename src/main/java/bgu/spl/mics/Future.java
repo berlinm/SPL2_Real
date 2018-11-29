@@ -14,7 +14,7 @@ public class Future<T> {
 
 	private T result;
 	private boolean b;
-	
+
 	/**
 	 * This should be the the only public constructor in this class.
 	 */
@@ -31,7 +31,7 @@ public class Future<T> {
      * @return return the result of type T if it is available, if not wait until it is available.
      * 	       
      */
-	public synchronized T get() {
+	public synchronized   T get() {
 		while (result==null) {
 			try {
 				wait();

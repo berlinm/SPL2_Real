@@ -26,12 +26,12 @@ public class MessageBusImpl implements MessageBus {
 	}
 
 	@Override
-	public <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) { //not sure about Synchronized
+	public  <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) { //not sure about Synchronized
 	    EvenetSubscribe.get(type).add(m);
 	}
 
 	@Override
-	public void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
+	public  void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
 		BroadcastSubscribe.get(type).add(m);
 	}
 
