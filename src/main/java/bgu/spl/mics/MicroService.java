@@ -1,5 +1,7 @@
 package bgu.spl.mics;
 
+import java.net.InterfaceAddress;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -24,8 +26,8 @@ public abstract class MicroService implements Runnable {
 
     private boolean terminated = false;
     private final String name;
-    private ConcurrentHashMap<Class<Event>, Callback> Eventhash=new ConcurrentHashMap<Class<Event>, Callback>();
-    private ConcurrentHashMap<Class<Broadcast>,Callback> BroadcastHash=new ConcurrentHashMap<Class<Broadcast>,Callback>();
+    private ConcurrentHashMap<Class<Event>, Callback> Eventhash = new ConcurrentHashMap<Class<Event>, Callback>();
+    private ConcurrentHashMap<Class<Broadcast>,Callback> BroadcastHash = new ConcurrentHashMap<Class<Broadcast>,Callback>();
 
     /**
      * @param name the micro-service name (used mainly for debugging purposes -
@@ -56,11 +58,12 @@ public abstract class MicroService implements Runnable {
      *                 {@code type} are taken from this micro-service message
      *                 queue.
      */
+    //TODO: solve this method
     protected final <T, E extends Event<T>> void subscribeEvent(Class<E> type, Callback<E> callback) {
         MessageBus messageBus=MessageBusImpl.getInstance();
         messageBus.subscribeEvent(type,this);
-        Eventhash.put((Class<Event>)type,callback); //not sure about what ive done here
-    }
+        Eventhash.put((Class<Event>) type,callback); //throw an illegal exception needs to be solved
+        }
 
     /**
      * Subscribes to broadcast message of type {@code type} with the callback
@@ -165,7 +168,7 @@ public abstract class MicroService implements Runnable {
             try
             {
                 Message m = berlinBus.awaitMessage(this);
-                if (m.isBroadcast()){
+                if (m instanceof Broadcast){
                     Broadcast b = (Broadcast) m;
                     this.BroadcastHash.get(b).call(m); //not sure what a callback gets as an argument, probbably message is correct
                 }
