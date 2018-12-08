@@ -7,6 +7,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="spl191BookStore" />
+        <module name="SPL2_Real" />
       </profile>
     </annotationProcessing>
   </component>

@@ -3,6 +3,9 @@ package bgu.spl.mics.application.passiveObjects;
 
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
+import java.awt.print.Book;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * Passive data-object representing the store inventory.
  * It holds a collection of {@link BookInventoryInfo} for all the
@@ -14,13 +17,17 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
  * You can add ONLY private fields and methods to this class as you see fit.
  */
 public class Inventory {
+	private BookInventoryInfo[] bookInventoryInfos;
 
 	/**
      * Retrieves the single instance of this class.
      */
+	private  static class SingletonHolder{
+		private static Inventory instance=new Inventory();
+
+	}
 	public static Inventory getInstance() {
-		//TODO: Implement this
-		return null;
+		return SingletonHolder.instance;
 	}
 	
 	/**
@@ -31,6 +38,11 @@ public class Inventory {
      * 						of the inventory.
      */
 	public void load (BookInventoryInfo[ ] inventory ) {
+		bookInventoryInfos=new BookInventoryInfo[inventory.length];
+
+		for(int i=0;i<inventory.length;i++){
+			bookInventoryInfos[i]=inventory[i];
+		}
 		
 	}
 	
@@ -43,8 +55,17 @@ public class Inventory {
      * 			second should reduce by one the number of books of the desired type.
      */
 	public OrderResult take (String book) {
-		
-		return null;
+		for(int i=0;i<bookInventoryInfos.length;i++){
+			if(bookInventoryInfos[i].getBookTitle()==book){
+				if(bookInventoryInfos[i].getAmountInInventory()>0){
+					return OrderResult.SUCCESSFULLY_TAKEN;
+				}else {
+					return OrderResult.NOT_IN_STOCK;
+				}
+			}
+		}
+
+		return OrderResult.NOT_IN_STOCK;
 	}
 	
 	
@@ -56,7 +77,12 @@ public class Inventory {
      * @return the price of the book if it is available, -1 otherwise.
      */
 	public int checkAvailabiltyAndGetPrice(String book) {
-		//TODO: Implement this
+
+		for(int i=0;i<bookInventoryInfos.length;i++){
+			if(bookInventoryInfos[i].getBookTitle()==book){
+				return bookInventoryInfos[i].getPrice();
+			}
+		}
 		return -1;
 	}
 	

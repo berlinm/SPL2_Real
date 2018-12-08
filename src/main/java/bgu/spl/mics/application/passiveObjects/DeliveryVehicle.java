@@ -41,6 +41,7 @@ public class DeliveryVehicle {
      * @param distance	The distance from the store to the customer.
      */
 	public void deliver(String address, int distance) {
-		// TODO Implement this
+		int time =distance/this.getSpeed();
+		//not finished
 	}
 }

@@ -1,6 +1,9 @@
 package bgu.spl.mics.application.passiveObjects;
 
 
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Passive object representing the store finance management. 
@@ -12,13 +15,18 @@ package bgu.spl.mics.application.passiveObjects;
  * You can add ONLY private fields and methods to this class as you see fit.
  */
 public class MoneyRegister {
-	
+
+	private BlockingQueue<OrderReceipt> orderReceipts;
 	/**
      * Retrieves the single instance of this class.
      */
+
+	private  static class SingletonHolder{
+		private static MoneyRegister instance=new MoneyRegister();
+
+	}
 	public static MoneyRegister getInstance() {
-		//TODO: Implement this
-		return null;
+		return SingletonHolder.instance;
 	}
 	
 	/**
@@ -27,15 +35,22 @@ public class MoneyRegister {
      * @param r		The receipt to save in the money register.
      */
 	public void file (OrderReceipt r) {
-		//TODO: Implement this.
+		orderReceipts.add(r);
 	}
 	
 	/**
      * Retrieves the current total earnings of the store.  
      */
 	public int getTotalEarnings() {
-		//TODO: Implement this
-		return 0;
+		int total=0;
+		BlockingQueue<OrderReceipt> curr=new LinkedBlockingQueue<OrderReceipt>();
+		while (orderReceipts.size()!=0){
+			OrderReceipt orderReceipt=orderReceipts.remove();
+			total=total+orderReceipt.getPrice();
+			curr.add(orderReceipt);
+		}
+		while (curr.size()!=0){orderReceipts.add(curr.remove());}
+		return total;
 	}
 	
 	/**

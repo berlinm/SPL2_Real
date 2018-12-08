@@ -2,6 +2,8 @@ package bgu.spl.mics.application.passiveObjects;
 
 import bgu.spl.mics.Future;
 
+import java.util.concurrent.BlockingQueue;
+
 /**
  * Passive object representing the resource manager.
  * You must not alter any of the given public methods of this class.
@@ -12,13 +14,19 @@ import bgu.spl.mics.Future;
  * You can add ONLY private methods and fields to this class.
  */
 public class ResourcesHolder {
-	
+
+	BlockingQueue<DeliveryVehicle> deliveryVehicles;
 	/**
      * Retrieves the single instance of this class.
      */
+
+	private  static class SingletonHolder{
+		private static ResourcesHolder instance=new ResourcesHolder();
+
+	}
+
 	public static ResourcesHolder getInstance() {
-		//TODO: Implement this
-		return null;
+		return SingletonHolder.instance;
 	}
 	
 	/**
@@ -29,7 +37,7 @@ public class ResourcesHolder {
      * 			{@link DeliveryVehicle} when completed.   
      */
 	public Future<DeliveryVehicle> acquireVehicle() {
-		//TODO: Implement this
+		//TODO:Implement this
 		return null;
 	}
 	
