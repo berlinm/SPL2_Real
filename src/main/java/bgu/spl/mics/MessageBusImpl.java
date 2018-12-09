@@ -1,9 +1,6 @@
 package bgu.spl.mics;
 
-import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 
 /**
  * The {@link MessageBusImpl class is the implementation of the MessageBus interface.
@@ -26,13 +23,23 @@ public class MessageBusImpl implements MessageBus {
 	}
 
 	@Override
-	public  <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) { //not sure about Synchronized
+	public  <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {
+		if(EventSubscribe.containsKey(type)){
 	    EventSubscribe.get(type).add(m);
+		}else{
+			EventSubscribe.put(type,new LinkedBlockingQueue<MicroService>());
+			EventSubscribe.get(type).add(m);
+		}
 	}
 
 	@Override
 	public  void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
-		BroadcastSubscribe.get(type).add(m);
+		if(BroadcastSubscribe.containsKey(type)) {
+			BroadcastSubscribe.get(type).add(m);
+		}else {
+			BroadcastSubscribe.put(type,new LinkedBlockingDeque<MicroService>());
+			BroadcastSubscribe.get(type).add(m);
+		}
 	}
 
 	@Override
@@ -41,21 +48,28 @@ public class MessageBusImpl implements MessageBus {
 		this.EventFut.remove(e); //not sure
 	}
 	@Override
-	public void sendBroadcast(Broadcast b) {
-        for(MicroService m : BroadcastSubscribe.get(b)){
-            try {
-                srvQueue.get(m).add(b);
-            }
-            catch (NullPointerException exception){ /*Other thread deleted m*/ }
-        }
+	public  void sendBroadcast(Broadcast b) {
+		if(BroadcastSubscribe.containsKey(b.getClass())) {
+			for (MicroService m : BroadcastSubscribe.get(b.getClass())) {
+				try {
+					srvQueue.get(m).add(b);
+					synchronized (m) {
+						m.notify();
+					}
+				} catch (NullPointerException exception) { /*Other thread deleted m*/ }
+			}
+		}
 	}
 	@Override
-	public synchronized  <T> Future<T> sendEvent(Event<T> e) { //again not sure about synchronized
+	public synchronized  <T> Future<T> sendEvent(Event<T> e) {
 		Future<T> res=new Future<T>();
-		MicroService m = this.EventSubscribe.get(e).remove();
-		this.EventSubscribe.get(e).add(m);
+		MicroService m = this.EventSubscribe.get(e.getClass()).remove();
+		this.EventSubscribe.get(e.getClass()).add(m);
 		srvQueue.get(m).add(e);
 		this.EventFut.put(e, res);
+		synchronized (m) {
+			m.notify();
+		}
 		return res;
 	}
 	@Override
@@ -88,9 +102,16 @@ public class MessageBusImpl implements MessageBus {
 	//I think that because each MicroService is calling this method with (this) as argument, no concurrency problems here,
 	//but needs to be checked again
 	@Override
-	public Message awaitMessage(MicroService m) throws InterruptedException {
+	public  Message awaitMessage(MicroService m) throws InterruptedException {
+		if(!this.srvQueue.containsKey(m)){
+			this.srvQueue.put(m,new LinkedBlockingQueue<Message>());
+		}
 			while (this.srvQueue.get(m).isEmpty()) {
-				wait();
+				try {
+					synchronized (m) {
+						m.wait();
+					}
+				}catch (Exception e){e.printStackTrace();}
 			}
 			return this.srvQueue.get(m).remove();
 	}

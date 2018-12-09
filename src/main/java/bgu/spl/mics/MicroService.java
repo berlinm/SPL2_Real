@@ -26,8 +26,7 @@ public abstract class MicroService implements Runnable {
 
     private boolean terminated = false;
     private final String name;
-    private ConcurrentHashMap<Class<Event>, Callback> Eventhash = new ConcurrentHashMap<Class<Event>, Callback>();
-    private ConcurrentHashMap<Class<Broadcast>,Callback> BroadcastHash = new ConcurrentHashMap<Class<Broadcast>,Callback>();
+    private ConcurrentHashMap<Class<? extends Message>, Callback> MessageHash = new ConcurrentHashMap<Class<? extends Message>, Callback>();
 
     /**
      * @param name the micro-service name (used mainly for debugging purposes -
@@ -62,7 +61,7 @@ public abstract class MicroService implements Runnable {
     protected final <T, E extends Event<T>> void subscribeEvent(Class<E> type, Callback<E> callback) {
         MessageBus messageBus=MessageBusImpl.getInstance();
         messageBus.subscribeEvent(type,this);
-        Eventhash.put((Class<Event>) type,callback); //throw an illegal exception needs to be solved
+        MessageHash.put(type,callback);
         }
 
     /**
@@ -88,7 +87,7 @@ public abstract class MicroService implements Runnable {
     protected final <B extends Broadcast> void subscribeBroadcast(Class<B> type, Callback<B> callback) {
         MessageBus messageBus=MessageBusImpl.getInstance();
         messageBus.subscribeBroadcast(type,this);
-        BroadcastHash.put((Class<Broadcast>)type,callback); //same
+        MessageHash.put(type,callback); //same
     }
 
     /**
@@ -162,21 +161,13 @@ public abstract class MicroService implements Runnable {
      */
     @Override
     public final void run() {
-        MessageBus berlinBus = MessageBusImpl.getInstance();
+        MessageBus Bus = MessageBusImpl.getInstance();
         initialize();
         while (!terminated) {
             try
             {
-                Message m = berlinBus.awaitMessage(this);
-                if (m instanceof Broadcast){
-                    Broadcast b = (Broadcast) m;
-                    this.BroadcastHash.get(b).call(m); //not sure what a callback gets as an argument, probbably message is correct
-                }
-                else
-                {
-                    Event e = (Event)m;
-                    this.Eventhash.get(e).call(m); //same
-                }
+                Message m = Bus.awaitMessage(this);
+                this.MessageHash.get(m.getClass()).call(m);
             }
             catch (InterruptedException e){
                 this.terminate();
