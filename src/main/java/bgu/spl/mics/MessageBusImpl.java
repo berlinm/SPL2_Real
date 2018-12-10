@@ -96,8 +96,7 @@ public class MessageBusImpl implements MessageBus {
                 }
             }
         }
-		srvQueue.remove(m);// maybe works :()
-		//					you are an idiot
+		srvQueue.remove(m);
 	}
 	//I think that because each MicroService is calling this method with (this) as argument, no concurrency problems here,
 	//but needs to be checked again

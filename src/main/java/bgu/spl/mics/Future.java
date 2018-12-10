@@ -72,9 +72,7 @@ public class Future<T> {
 	public T get(long timeout, TimeUnit unit) {
 		while (result==null) {
 			try {
-				synchronized (this) {
-					wait(unit.toMillis(timeout));
-				}
+				Thread.sleep(unit.toMillis(timeout));
 			}
 			catch (InterruptedException e){e.printStackTrace();}
 		}
