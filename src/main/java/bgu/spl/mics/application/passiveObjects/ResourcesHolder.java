@@ -1,6 +1,8 @@
 package bgu.spl.mics.application.passiveObjects;
 
+import bgu.spl.mics.DeliveryEvent;
 import bgu.spl.mics.Future;
+import bgu.spl.mics.MessageBusImpl;
 
 import java.util.concurrent.BlockingQueue;
 
@@ -22,7 +24,6 @@ public class ResourcesHolder {
 
 	private  static class SingletonHolder{
 		private static ResourcesHolder instance=new ResourcesHolder();
-
 	}
 
 	public static ResourcesHolder getInstance() {
@@ -37,8 +38,8 @@ public class ResourcesHolder {
      * 			{@link DeliveryVehicle} when completed.   
      */
 	public Future<DeliveryVehicle> acquireVehicle() {
-		//TODO:Implement this
-		return null;
+		//not sure
+		return MessageBusImpl.getInstance().sendEvent(new DeliveryEvent());
 	}
 	
 	/**

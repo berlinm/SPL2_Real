@@ -18,14 +18,13 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Inventory {
 	private BookInventoryInfo[] bookInventoryInfos;
-
+	private static class SingletonHolder{
+		private static Inventory instance = new Inventory();
+	}
 	/**
      * Retrieves the single instance of this class.
      */
-	private  static class SingletonHolder{
-		private static Inventory instance=new Inventory();
 
-	}
 	public static Inventory getInstance() {
 		return SingletonHolder.instance;
 	}
@@ -37,15 +36,12 @@ public class Inventory {
      * @param inventory 	Data structure containing all data necessary for initialization
      * 						of the inventory.
      */
-	public void load (BookInventoryInfo[ ] inventory ) {
-		bookInventoryInfos=new BookInventoryInfo[inventory.length];
-
-		for(int i=0;i<inventory.length;i++){
-			bookInventoryInfos[i]=inventory[i];
+	public void load(BookInventoryInfo[] inventory) {
+		bookInventoryInfos = new BookInventoryInfo[inventory.length];
+		for(int i = 0; i < inventory.length; i++){
+			bookInventoryInfos[i]  = inventory[i];
 		}
-		
 	}
-	
 	/**
      * Attempts to take one book from the store.
      * <p>
@@ -54,7 +50,7 @@ public class Inventory {
      * 			The first should not change the state of the inventory while the 
      * 			second should reduce by one the number of books of the desired type.
      */
-	public OrderResult take (String book) {
+	public OrderResult take(String book) {
 		for(int i=0;i<bookInventoryInfos.length;i++){
 			if(bookInventoryInfos[i].getBookTitle()==book){
 				if(bookInventoryInfos[i].getAmountInInventory()>0){
@@ -64,7 +60,6 @@ public class Inventory {
 				}
 			}
 		}
-
 		return OrderResult.NOT_IN_STOCK;
 	}
 	
@@ -77,9 +72,8 @@ public class Inventory {
      * @return the price of the book if it is available, -1 otherwise.
      */
 	public int checkAvailabiltyAndGetPrice(String book) {
-
 		for(int i=0;i<bookInventoryInfos.length;i++){
-			if(bookInventoryInfos[i].getBookTitle()==book){
+			if(bookInventoryInfos[i].getBookTitle() == book){
 				return bookInventoryInfos[i].getPrice();
 			}
 		}

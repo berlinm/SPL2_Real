@@ -15,12 +15,10 @@ import java.util.concurrent.LinkedBlockingQueue;
  * You can add ONLY private fields and methods to this class as you see fit.
  */
 public class MoneyRegister {
-
 	private BlockingQueue<OrderReceipt> orderReceipts;
 	/**
      * Retrieves the single instance of this class.
      */
-
 	private  static class SingletonHolder{
 		private static MoneyRegister instance=new MoneyRegister();
 
@@ -52,16 +50,18 @@ public class MoneyRegister {
 		while (curr.size()!=0){orderReceipts.add(curr.remove());}
 		return total;
 	}
-	
 	/**
      * Charges the credit card of the customer a certain amount of money.
      * <p>
      * @param amount 	amount to charge
      */
-	public void chargeCreditCard(Customer c, int amount) {
-		// TODO Implement this
+	public void chargeCreditCard(Customer c, int amount) throws Exception {
+		if (c.getAvailableCreditAmount() < amount){
+			throw new Exception("Customer does not have enough money");
+		}
+		c.chargeCreditCard(amount);
 	}
-	
+
 	/**
      * Prints to a file named @filename a serialized object List<OrderReceipt> which holds all the order receipts 
      * currently in the MoneyRegister

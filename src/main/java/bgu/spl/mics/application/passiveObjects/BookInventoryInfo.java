@@ -46,7 +46,7 @@ public class BookInventoryInfo {
 		return this.amountInInventory != 0;
 	}
 
-	public void takeBook() throws BookNotInStockException {
+	public void takeBook(){
 		if (this.amountInInventory <= 0)
 		{
 			throw new BookNotInStockException();

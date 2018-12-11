@@ -1,6 +1,7 @@
 package bgu.spl.mics.application.services;
 
 import bgu.spl.mics.*;
+import bgu.spl.mics.Messages.TakeBookEvent;
 import bgu.spl.mics.application.passiveObjects.MoneyRegister;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -25,14 +26,18 @@ public class SellingService extends MicroService {
 
 	@Override
 	protected void initialize() {
-
 		subscribeEvent(BookOrderEvent.class, ev -> {
 			CheckInventoryEvent it = new CheckInventoryEvent(ev.getOrderedBook());
 			Future<AtomicInteger> result = sendEvent(it);
 			if (result.get() != null) {
 				TakeBookEvent takeBookEvent=new TakeBookEvent(ev.getOrderedBook());
 				sendEvent(takeBookEvent);
-				this.moneyRegister.chargeCreditCard(ev.getCustomer(), result.get().intValue());
+				try {
+					this.moneyRegister.chargeCreditCard(ev.getCustomer(), result.get().intValue());
+				} catch (Exception e) {
+					//not enough money
+					e.printStackTrace();
+				}
 				DeliveryEvent deliveryEvent=new DeliveryEvent();
 				sendEvent(deliveryEvent);
 				terminate();

@@ -41,7 +41,10 @@ public class DeliveryVehicle {
      * @param distance	The distance from the store to the customer.
      */
 	public void deliver(String address, int distance) {
-		int time =distance/this.getSpeed();
-		//not finished
+		int time = distance/this.getSpeed();
+		try {
+			Thread.sleep(time);
+		}
+		catch (InterruptedException ie){}
 	}
 }

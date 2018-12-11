@@ -105,7 +105,6 @@ public abstract class MicroService implements Runnable {
     protected final <T> Future<T> sendEvent(Event<T> e) {
         MessageBus messageBus=MessageBusImpl.getInstance();
         Future<T> ret=messageBus.sendEvent(e); //note for later : need to support theards(not supporting now ) cant use synchronized !!
-
         return ret;
     }
 

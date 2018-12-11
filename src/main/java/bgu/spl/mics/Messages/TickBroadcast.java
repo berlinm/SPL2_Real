@@ -1,6 +1,6 @@
-package bgu.spl.mics;
+package bgu.spl.mics.Messages;
 
-import java.util.Timer;
+import bgu.spl.mics.Broadcast;
 
 public class TickBroadcast implements Broadcast {
     private int currentTick;
