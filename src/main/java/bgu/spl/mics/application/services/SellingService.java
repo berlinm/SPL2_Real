@@ -19,8 +19,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SellingService extends MicroService {
 	MoneyRegister moneyRegister;
 
-	public SellingService(String name) {
-		super(name);
+	public SellingService() {
+		super("Selling Service");
 		moneyRegister = MoneyRegister.getInstance();
 	}
 
@@ -38,7 +38,7 @@ public class SellingService extends MicroService {
 					//not enough money
 					e.printStackTrace();
 				}
-				DeliveryEvent deliveryEvent=new DeliveryEvent();
+				DeliveryEvent deliveryEvent=new DeliveryEvent(ev.getCustomer());
 				sendEvent(deliveryEvent);
 				terminate();
 

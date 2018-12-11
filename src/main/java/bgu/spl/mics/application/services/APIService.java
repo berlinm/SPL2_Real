@@ -19,8 +19,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class APIService extends MicroService{
 	ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>> orderSchedule;
-	public APIService(ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>> orderSchedule,String name) {
-		super(name);
+	public APIService(ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>> orderSchedule) {
+		super("API Service");
 		if(orderSchedule.isEmpty()){
 			throw new IllegalArgumentException("Orders Schedule can't be empty ");
 		}
@@ -37,6 +37,8 @@ public class APIService extends MicroService{
 				{
 					sendEvent(bookOrderEvent);
 				}
+
+				terminate();
 			}
 		});
 		
