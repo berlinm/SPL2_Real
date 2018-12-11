@@ -29,28 +29,30 @@ public class SellingService extends MicroService {
 
 	@Override
 	protected void initialize() {
-		subscribeEvent(BookOrderEvent.class, ev -> {
-			CheckInventoryEvent it = new CheckInventoryEvent(ev.getOrderedBook());
-			Future<AtomicInteger> result = sendEvent(it);
-			if (result.get() != null) {
-				TakeBookEvent takeBookEvent=new TakeBookEvent(ev.getOrderedBook());
-				sendEvent(takeBookEvent);
-				try {
-					this.moneyRegister.chargeCreditCard(ev.getCustomer(), result.get().intValue());
-				} catch (Exception e) {
-					//not enough money
-					e.printStackTrace();
-				}
-				//i have no idea right now what is the diffrence between each tick in the order recipet constructor
-				OrderReceipt orderReceipt=new OrderReceipt(orders,this.getName(),ev.getCustomer().getId(),ev.getOrderedBook(),result.get().intValue(),ev.getCurrTick(),ev.getCurrTick(),ev.getCurrTick());
-				complete(ev,orderReceipt);
-				terminate();
+		subscribeEvent(BookOrderEvent.class, new Callback<BookOrderEvent>() {
+			@Override
+			public void call(BookOrderEvent orderEvent) {
+					CheckInventoryEvent it = new CheckInventoryEvent(orderEvent.getOrderedBook());
+					Future<AtomicInteger> result = sendEvent(it);
+					if (result.get() != null) {
+						TakeBookEvent takeBookEvent=new TakeBookEvent(orderEvent.getOrderedBook());
+						sendEvent(takeBookEvent);
+						try {
+							moneyRegister.chargeCreditCard(orderEvent.getCustomer(), result.get().intValue());
+						} catch (Exception e) {
+							//not enough money
+							e.printStackTrace();
+						}
+						//i have no idea right now what is the diffrence between each tick in the order recipet constructor
+						OrderReceipt orderReceipt=new OrderReceipt(orders,getName(),orderEvent.getCustomer().getId(),orderEvent.getOrderedBook(),result.get().intValue(),orderEvent.getCurrTick(),orderEvent.getCurrTick(),orderEvent.getCurrTick());
+						complete(orderEvent,orderReceipt);
+						terminate();
 
-			} else {
-				System.out.println("This book don't exist or out of stock in our Inventory");
-				terminate();
+					} else {
+						System.out.println("This book don't exist or out of stock in our Inventory");
+						terminate();
+					}
 			}
-
 		});
 
 	}
