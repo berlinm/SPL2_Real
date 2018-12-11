@@ -5,6 +5,7 @@ import bgu.spl.mics.Future;
 import bgu.spl.mics.MessageBusImpl;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Semaphore;
 
 /**
  * Passive object representing the resource manager.
@@ -18,6 +19,7 @@ import java.util.concurrent.BlockingQueue;
 public class ResourcesHolder {
 
 	BlockingQueue<DeliveryVehicle> deliveryVehicles;
+	Semaphore _sem;
 	/**
      * Retrieves the single instance of this class.
      */
@@ -38,8 +40,7 @@ public class ResourcesHolder {
      * 			{@link DeliveryVehicle} when completed.   
      */
 	public Future<DeliveryVehicle> acquireVehicle() {
-		//not sure
-		return MessageBusImpl.getInstance().sendEvent(new DeliveryEvent());
+		return null;
 	}
 	
 	/**
@@ -58,7 +59,13 @@ public class ResourcesHolder {
      * @param vehicles	Array of {@link DeliveryVehicle} instances to store.
      */
 	public void load(DeliveryVehicle[] vehicles) {
-		//TODO: Implement this
+
+		for(int i=0;i<vehicles.length;i++){
+
+			deliveryVehicles.add(vehicles[i]);
+		}
+
+		_sem=new Semaphore(vehicles.length);
 	}
 
 }

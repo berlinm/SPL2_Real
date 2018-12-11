@@ -2,6 +2,8 @@ package bgu.spl.mics.application.services;
 
 import bgu.spl.mics.*;
 import bgu.spl.mics.Messages.TickBroadcast;
+import bgu.spl.mics.application.passiveObjects.Customer;
+import bgu.spl.mics.application.passiveObjects.OrderReceipt;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,24 +20,34 @@ import java.util.concurrent.atomic.AtomicInteger;
  * You MAY change constructor signatures and even add new public constructors.
  */
 public class APIService extends MicroService{
-	ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>> orderSchedule;
-	public APIService(ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>> orderSchedule) {
+	private ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>> orderSchedule;
+	private Customer customer;
+	public APIService(ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>> orderSchedule,Customer customer) {
 		super("API Service");
 		if(orderSchedule.isEmpty()){
 			throw new IllegalArgumentException("Orders Schedule can't be empty ");
 		}
 		this.orderSchedule = orderSchedule;
+		this.customer=customer;
 	}
+
 	@Override
 	protected void initialize() {
 		System.out.println("API Service "+this.getName()+" started");
+		Customer customer=this.customer;
 		subscribeBroadcast(TickBroadcast.class, new Callback<TickBroadcast>() {
 			@Override
 			public void call(TickBroadcast c) {
 				System.out.println("API Service "+getName()+"got broadcast from" + TickBroadcast.class.getName());
 				for (BookOrderEvent bookOrderEvent: orderSchedule.get(c.getCurrentTick()))
 				{
-					sendEvent(bookOrderEvent);
+					Future<OrderReceipt> result =sendEvent(bookOrderEvent);
+					if(result!=null) {
+						OrderReceipt orderReceipt = result.get();
+						customer.getCustomerReceiptList().add(orderReceipt);
+						DeliveryEvent deliveryEvent = new DeliveryEvent(customer);
+						sendEvent(deliveryEvent);
+					}
 				}
 
 				terminate();

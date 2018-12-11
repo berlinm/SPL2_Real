@@ -3,6 +3,7 @@ package bgu.spl.mics.application.services;
 import bgu.spl.mics.*;
 import bgu.spl.mics.Messages.TakeBookEvent;
 import bgu.spl.mics.application.passiveObjects.MoneyRegister;
+import bgu.spl.mics.application.passiveObjects.OrderReceipt;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -17,11 +18,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * You MAY change constructor signatures and even add new public constructors.
  */
 public class SellingService extends MicroService {
-	MoneyRegister moneyRegister;
+	private MoneyRegister moneyRegister;
+	int orders;
 
-	public SellingService() {
-		super("Selling Service");
+	public SellingService(String name) {
+		super(name);
 		moneyRegister = MoneyRegister.getInstance();
+		orders=0;
 	}
 
 	@Override
@@ -38,8 +41,9 @@ public class SellingService extends MicroService {
 					//not enough money
 					e.printStackTrace();
 				}
-				DeliveryEvent deliveryEvent=new DeliveryEvent(ev.getCustomer());
-				sendEvent(deliveryEvent);
+				//i have no idea right now what is the diffrence between each tick in the order recipet constructor
+				OrderReceipt orderReceipt=new OrderReceipt(orders,this.getName(),ev.getCustomer().getId(),ev.getOrderedBook(),result.get().intValue(),ev.getCurrTick(),ev.getCurrTick(),ev.getCurrTick());
+				complete(ev,orderReceipt);
 				terminate();
 
 			} else {

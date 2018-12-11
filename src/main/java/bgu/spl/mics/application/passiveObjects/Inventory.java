@@ -1,10 +1,8 @@
 package bgu.spl.mics.application.passiveObjects;
-
-
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-import java.awt.print.Book;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Iterator;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Passive data-object representing the store inventory.
@@ -17,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * You can add ONLY private fields and methods to this class as you see fit.
  */
 public class Inventory {
-	private BookInventoryInfo[] bookInventoryInfos;
+	private ConcurrentLinkedQueue<BookInventoryInfo> bookInventoryInfos;
 	private static class SingletonHolder{
 		private static Inventory instance = new Inventory();
 	}
@@ -28,7 +26,7 @@ public class Inventory {
 	public static Inventory getInstance() {
 		return SingletonHolder.instance;
 	}
-	
+
 	/**
      * Initializes the store inventory. This method adds all the items given to the store
      * inventory.
@@ -37,9 +35,9 @@ public class Inventory {
      * 						of the inventory.
      */
 	public void load(BookInventoryInfo[] inventory) {
-		bookInventoryInfos = new BookInventoryInfo[inventory.length];
+		bookInventoryInfos =new ConcurrentLinkedQueue<BookInventoryInfo>();
 		for(int i = 0; i < inventory.length; i++){
-			bookInventoryInfos[i]  = inventory[i];
+			bookInventoryInfos.add(inventory[i]);
 		}
 	}
 	/**
@@ -50,13 +48,18 @@ public class Inventory {
      * 			The first should not change the state of the inventory while the 
      * 			second should reduce by one the number of books of the desired type.
      */
-	public OrderResult take(String book) {
-		for(int i=0;i<bookInventoryInfos.length;i++){
-			if(bookInventoryInfos[i].getBookTitle()==book){
-				if(bookInventoryInfos[i].getAmountInInventory()>0){
+	public  OrderResult take(String book) {
+		Iterator<BookInventoryInfo> it=bookInventoryInfos.iterator();
+
+		while (it.hasNext()){
+
+			BookInventoryInfo curr=it.next();
+
+			if(curr.getBookTitle()==book){
+				curr.getsem().tryAcquire();
+				if(curr.getAmountInInventory()>0){
+					curr.takeBook();
 					return OrderResult.SUCCESSFULLY_TAKEN;
-				}else {
-					return OrderResult.NOT_IN_STOCK;
 				}
 			}
 		}
@@ -72,12 +75,19 @@ public class Inventory {
      * @return the price of the book if it is available, -1 otherwise.
      */
 	public int checkAvailabiltyAndGetPrice(String book) {
-		for(int i=0;i<bookInventoryInfos.length;i++){
-			if(bookInventoryInfos[i].getBookTitle() == book){
-				return bookInventoryInfos[i].getPrice();
+		int price=-1;
+
+		Iterator<BookInventoryInfo> it=bookInventoryInfos.iterator();
+
+		while (it.hasNext()){
+			BookInventoryInfo curr=it.next();
+			curr.getsem().tryAcquire();
+			if(curr.getAmountInInventory()>0 && curr.getBookTitle()==book){
+				price= curr.getPrice();
 			}
 		}
-		return -1;
+
+		return price;
 	}
 	
 	/**
