@@ -32,26 +32,26 @@ public class SellingService extends MicroService {
 		subscribeEvent(BookOrderEvent.class, new Callback<BookOrderEvent>() {
 			@Override
 			public void call(BookOrderEvent orderEvent) {
-					CheckInventoryEvent it = new CheckInventoryEvent(orderEvent.getOrderedBook());
-					Future<AtomicInteger> result = sendEvent(it);
-					if (result.get() != null) {
-						TakeBookEvent takeBookEvent=new TakeBookEvent(orderEvent.getOrderedBook());
-						sendEvent(takeBookEvent);
-						try {
-							moneyRegister.chargeCreditCard(orderEvent.getCustomer(), result.get().intValue());
-						} catch (Exception e) {
-							//not enough money
-							e.printStackTrace();
-						}
-						//i have no idea right now what is the diffrence between each tick in the order recipet constructor
-						OrderReceipt orderReceipt=new OrderReceipt(orders,getName(),orderEvent.getCustomer().getId(),orderEvent.getOrderedBook(),result.get().intValue(),orderEvent.getCurrTick(),orderEvent.getCurrTick(),orderEvent.getCurrTick());
-						complete(orderEvent,orderReceipt);
-						terminate();
-
-					} else {
-						System.out.println("This book don't exist or out of stock in our Inventory");
-						terminate();
+				CheckInventoryEvent invEvent = new CheckInventoryEvent(orderEvent.getOrderedBook());
+				Future<AtomicInteger> inventoryResult = sendEvent(invEvent);
+				int price = inventoryResult.get().intValue();
+				if (price >= 0) {
+					TakeBookEvent takeBookEvent = new TakeBookEvent(orderEvent.getOrderedBook());
+					sendEvent(takeBookEvent);
+					try {
+						moneyRegister.chargeCreditCard(orderEvent.getCustomer(), price);
+					} catch (Exception e) {
+						e.printStackTrace();
+						return;
 					}
+					//according orel there is a need of sending an event to the timer asking for the current tick. this tick will be the issuedTick
+					OrderReceipt orderReceipt = new OrderReceipt(orders, getName(), orderEvent.getCustomer().getId(), orderEvent.getOrderedBook(), inventoryResult.get().intValue(), orderEvent.getOrderTick(), orderEvent.getOrderTick(), orderEvent.getOrderTick());
+					complete(orderEvent, orderReceipt);
+					terminate();
+				} else {
+					System.out.println("This book don't exist or out of stock in our Inventory");
+					terminate();
+				}
 			}
 		});
 
