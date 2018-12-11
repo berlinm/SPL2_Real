@@ -1,5 +1,8 @@
 package bgu.spl.mics.application.passiveObjects;
 
+import bgu.spl.mics.TimeService;
+import com.sun.org.apache.xml.internal.security.signature.ReferenceNotInitializedException;
+
 /**
  * Passive data-object representing a receipt that should 
  * be sent to a customer after the completion of a BookOrderEvent.
@@ -14,10 +17,21 @@ public class OrderReceipt {
 	private String bookTitle;
 	private int price;
 	private int issuedTick;
+	private int orderTick;
 	private  int proccessTick;
+
+	public OrderReceipt(int orderId, String seller, int customerId, String bookTitle, int price, int proccessTick, int orderTick, int issuedTick){
+		this.OrderId = orderId;
+		this.seller = seller;
+		this.customerId = customerId;
+		this.bookTitle = bookTitle;
+		this.price = price;
+		this.issuedTick = issuedTick;
+		this.proccessTick = proccessTick;
+	}
 	/**
-     * Retrieves the orderId of this receipt.
-     */
+	 * Retrieves the orderId of this receipt.
+	 */
 	public int getOrderId() {
 		return OrderId;
 	}
@@ -63,8 +77,7 @@ public class OrderReceipt {
      * Retrieves the tick in which the customer sent the purchase request.
      */
 	public int getOrderTick() {
-		// TODO Implement this
-		return 0;
+		return orderTick;
 	}
 	
 	/**

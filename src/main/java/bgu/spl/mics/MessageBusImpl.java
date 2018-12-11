@@ -48,7 +48,7 @@ public class MessageBusImpl implements MessageBus {
 		this.EventFut.remove(e); //not sure
 	}
 	@Override
-	public  void sendBroadcast(Broadcast b) {
+	public void sendBroadcast(Broadcast b) {
 		if(BroadcastSubscribe.containsKey(b.getClass())) {
 			for (MicroService m : BroadcastSubscribe.get(b.getClass())) {
 				try {

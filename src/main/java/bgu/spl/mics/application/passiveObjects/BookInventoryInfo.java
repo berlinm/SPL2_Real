@@ -41,8 +41,19 @@ public class BookInventoryInfo {
 	public int getPrice() {
 		return price;
 	}
-	
-	
 
+	public boolean isInStock(){
+		return this.amountInInventory != 0;
+	}
+
+	public void takeBook() throws BookNotInStockException {
+		if (this.amountInInventory <= 0)
+		{
+			throw new BookNotInStockException();
+		}
+		this.amountInInventory--;
+	}
+	
+	private class BookNotInStockException extends RuntimeException{}
 	
 }
