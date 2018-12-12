@@ -319,7 +319,7 @@ public class BookStoreRunner {
                 resourcesHolder.releaseVehicle(deliveryVehicle);
             }
         }
-        
+
 
 
 
