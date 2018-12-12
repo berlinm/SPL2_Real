@@ -1,4 +1,5 @@
 package bgu.spl.mics.application.passiveObjects;
+import bgu.spl.mics.BookSemaphoreHolder;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.Iterator;
@@ -80,7 +81,10 @@ public class Inventory {
 				price = curr.getPrice();
 			}
 		}
-		return price;
+		if (price != -1 && BookSemaphoreHolder.getInstance().tryAcquire(book)){
+			return price;
+		}
+		return -1;
 	}
 	/**
      * 

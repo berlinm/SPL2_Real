@@ -6,7 +6,6 @@ import bgu.spl.mics.MessageBusImpl;
 import bgu.spl.mics.application.passiveObjects.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
 import java.io.*;
 
 /** This is the Main class of the application. You should parse the input file,
