@@ -5,6 +5,10 @@ import bgu.spl.mics.application.passiveObjects.BookInventoryInfo;
 import bgu.spl.mics.application.passiveObjects.Customer;
 import bgu.spl.mics.application.passiveObjects.DeliveryVehicle;
 import bgu.spl.mics.application.passiveObjects.ResourcesHolder;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import java.io.*;
 
 /** This is the Main class of the application. You should parse the input file,
  * create the different instances of the objects, and run the system.
@@ -178,6 +182,15 @@ public class BookStoreRunner {
 
         JsonParser jsonParser=new JsonParser();
 
+        try(Reader reader=new FileReader(args[0])) {
+            Gson gson=new GsonBuilder().create();
+            jsonParser=gson.fromJson(reader,jsonParser.getClass());
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
 
     }
