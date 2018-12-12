@@ -50,7 +50,7 @@ public class BookInventoryInfo {
 		return this.amountInInventory != 0;
 	}
 
-	public void takeBook(){
+	public synchronized void takeBook(){
 		if (this.amountInInventory <= 0)
 		{
 			throw new BookNotInStockException();

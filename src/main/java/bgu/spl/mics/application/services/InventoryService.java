@@ -32,18 +32,16 @@ public class InventoryService extends MicroService{
 	@Override
 	protected void initialize() {
 
-		subscribeEvent(CheckInventoryEvent.class,ev->{
-			int x = inventory.checkAvailabiltyAndGetPrice(ev.getName());
-			if(x == -1){
-				complete(ev,new AtomicInteger(-1));
-			}
-			else {
-				AtomicInteger atomicInteger=new AtomicInteger(x);
-				complete(ev,atomicInteger);
-			}
+		subscribeEvent(CheckInventoryEvent.class,checkInventoryEvent->{
+			int price = inventory.checkAvailabiltyAndGetPrice(checkInventoryEvent.getName());
+			complete(checkInventoryEvent,new AtomicInteger(price));
 		});
-		subscribeEvent(TakeBookEvent.class,ev->{
-			OrderResult result=inventory.take(ev.getName());
+		subscribeEvent(TakeBookEvent.class,takeBookEvent ->{
+			OrderResult result = inventory.take(takeBookEvent.getName());
+			if (result == OrderResult.NOT_IN_STOCK) {
+				complete(takeBookEvent, false);
+			}
+			else complete(takeBookEvent, true);
 		});
 		subscribeBroadcast(TerminationBroadcast.class, new Callback<TerminationBroadcast>(){
 			@Override
