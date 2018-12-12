@@ -42,22 +42,22 @@ public class SellingService extends MicroService {
 					System.out.println("Could not get books price");
 					return;
 				}
-				//lets take book
-				Future<Boolean> sendRes = sendEvent(new TakeBookEvent(orderEvent.getOrderedBook()));
-				if (!sendRes.get()){
-					System.out.println("Could not take book");
-					return;
-				}
+				//lets charge the customer
 				try {
 					moneyRegister.chargeCreditCard(orderEvent.getCustomer(), price);
 				} catch (Exception e) {
 					e.printStackTrace();
 					return;
 				}
+				//lets take book
+				Future<Boolean> sendRes = sendEvent(new TakeBookEvent(orderEvent.getOrderedBook()));
+				if (!sendRes.get()){
+					throw new BookNotInInventoryException("Something wrong. selling service " + getName() + "tried to order "
+					+ orderEvent.getOrderedBook() + "And the price was not -1 even though book was not in stock or not exists.");
+				}
 				//lets get the current tick for the issued tick
-				Future<AtomicInteger> currentTick2 = sendEvent(new AskForTickEvent());
-				int issuedTick = currentTick.get().intValue();
-				OrderReceipt orderReceipt = new OrderReceipt(orders, getName(), orderEvent.getCustomer().getId(), orderEvent.getOrderedBook(), inventoryResult.get().intValue(), proccessingTick, orderEvent.getOrderTick(), issuedTick);
+				Future<AtomicInteger> issuedTick = sendEvent(new AskForTickEvent());
+				OrderReceipt orderReceipt = new OrderReceipt(orders, getName(), orderEvent.getCustomer().getId(), orderEvent.getOrderedBook(), inventoryResult.get().intValue(), proccessingTick, orderEvent.getOrderTick(), issuedTick.get().intValue());
 				complete(orderEvent, orderReceipt);
 			}
 		});
@@ -68,5 +68,16 @@ public class SellingService extends MicroService {
 				terminate();
 			}
 		});
+	}
+	private class BookNotInInventoryException extends RuntimeException{
+		private String doc;
+		public BookNotInInventoryException(){this.doc = "";}
+		public BookNotInInventoryException(String doc){
+			this.doc = doc;
+		}
+
+		public String getDoc() {
+			return doc;
+		}
 	}
 }
