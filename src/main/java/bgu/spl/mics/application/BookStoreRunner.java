@@ -36,6 +36,17 @@ public class BookStoreRunner {
 
             }
 
+            public InitialInventory getInitialInventory() {
+                return initialInventory;
+            }
+
+            public InitialResources getInitialResources() {
+                return initialResources;
+            }
+
+            public Services getServices() {
+                return services;
+            }
 
             class InitialInventory {
                 private Book[] bookInventoryInfos;
@@ -46,6 +57,9 @@ public class BookStoreRunner {
                     }
                 }
 
+                public Book[] getBookInventoryInfos() {
+                    return bookInventoryInfos;
+                }
             }
 
             class Book {
@@ -59,6 +73,18 @@ public class BookStoreRunner {
                     this.price = price;
                     this.bookTitle = bookTitle;
 
+                }
+
+                public int getAmount() {
+                    return amount;
+                }
+
+                public int getPrice() {
+                    return price;
+                }
+
+                public String getBookTitle() {
+                    return bookTitle;
                 }
             }
 
@@ -75,6 +101,9 @@ public class BookStoreRunner {
                     }
                 }
 
+                public Vehicle[][] getDeliveryVehicles() {
+                    return deliveryVehicles;
+                }
             }
 
             class Vehicle {
@@ -84,6 +113,14 @@ public class BookStoreRunner {
                 public Vehicle(int license, int speed) {
                     this.license = license;
                     this.speed = speed;
+                }
+
+                public int getLicense() {
+                    return license;
+                }
+
+                public int getSpeed() {
+                    return speed;
                 }
             }
 
@@ -105,7 +142,29 @@ public class BookStoreRunner {
                     this.customers = customers;
                 }
 
+                public Customers getCustomers() {
+                    return customers;
+                }
 
+                public Time getTime() {
+                    return time;
+                }
+
+                public int getInventoryService() {
+                    return inventoryService;
+                }
+
+                public int getLogistic() {
+                    return logistic;
+                }
+
+                public int getResourceService() {
+                    return resourceService;
+                }
+
+                public int getSelling() {
+                    return selling;
+                }
             }
 
             class Time {
@@ -117,6 +176,13 @@ public class BookStoreRunner {
                     this.duration = duration;
                 }
 
+                public int getSpeed() {
+                    return speed;
+                }
+
+                public int getDuration() {
+                    return duration;
+                }
             }
 
             class Customers {
@@ -127,6 +193,9 @@ public class BookStoreRunner {
                     this.customers = customers;
                 }
 
+                public Customer[] getCustomers() {
+                    return customers;
+                }
             }
 
             class Customer {
@@ -146,6 +215,30 @@ public class BookStoreRunner {
                     this.creditCard = creditCard;
                     this.orderSchedule = orderSchedule;
                 }
+
+                public CreditCard getCreditCard() {
+                    return creditCard;
+                }
+
+                public int getDistance() {
+                    return distance;
+                }
+
+                public int getId() {
+                    return id;
+                }
+
+                public String getAddress() {
+                    return address;
+                }
+
+                public String getName() {
+                    return name;
+                }
+
+                public OrderSchedule getOrderSchedule() {
+                    return orderSchedule;
+                }
             }
 
             class CreditCard {
@@ -157,6 +250,13 @@ public class BookStoreRunner {
                     this.number = number;
                 }
 
+                public int getAmount() {
+                    return amount;
+                }
+
+                public int getNumber() {
+                    return number;
+                }
             }
 
             class OrderSchedule {
@@ -166,6 +266,9 @@ public class BookStoreRunner {
                     this.bookByTicks=bookByTicks;
                 }
 
+                public BookByTick[] getBookByTicks() {
+                    return bookByTicks;
+                }
             }
 
 
@@ -177,20 +280,34 @@ public class BookStoreRunner {
                     this.bookTitle = bookTitle;
                     this.tick = tick;
                    }
-             }
+
+                public String getBookTitle() {
+                    return bookTitle;
+                }
+
+                public int getTick() {
+                    return tick;
+                }
+            }
     }
 
         JsonParser jsonParser=new JsonParser();
 
         try(Reader reader=new FileReader(args[0])) {
             Gson gson=new GsonBuilder().create();
-            jsonParser=gson.fromJson(reader,jsonParser.getClass());
+            jsonParser=gson.fromJson(reader,JsonParser.class);
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+
+        JsonParser.InitialInventory initialInventory=jsonParser.getInitialInventory();
+        
+
+
 
 
     }
