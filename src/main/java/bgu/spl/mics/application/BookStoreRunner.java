@@ -1,10 +1,9 @@
 package bgu.spl.mics.application;
 
 
-import bgu.spl.mics.application.passiveObjects.BookInventoryInfo;
-import bgu.spl.mics.application.passiveObjects.Customer;
-import bgu.spl.mics.application.passiveObjects.DeliveryVehicle;
-import bgu.spl.mics.application.passiveObjects.ResourcesHolder;
+import bgu.spl.mics.MessageBus;
+import bgu.spl.mics.MessageBusImpl;
+import bgu.spl.mics.application.passiveObjects.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -303,9 +302,27 @@ public class BookStoreRunner {
             e.printStackTrace();
         }
 
+        Inventory inventory=Inventory.getInstance();
+        JsonParser.Book[] books=jsonParser.getInitialInventory().getBookInventoryInfos();
+        BookInventoryInfo[] ToLoad=new BookInventoryInfo[books.length];
+        for(int i=0;i<books.length;i++){
+            BookInventoryInfo newbook=new BookInventoryInfo(books[i].getBookTitle(),books[i].getAmount(),books[i].getPrice());
+            ToLoad[i]=newbook;
+        }
+        inventory.load(ToLoad);
 
-        JsonParser.InitialInventory initialInventory=jsonParser.getInitialInventory();
+        ResourcesHolder resourcesHolder=ResourcesHolder.getInstance();
+        JsonParser.Vehicle[][] vehicles=jsonParser.getInitialResources().getDeliveryVehicles();
+        for(int i=0;i<vehicles.length;i++){
+            for(int j=0;j<vehicles[i].length;j++){
+                DeliveryVehicle deliveryVehicle=new DeliveryVehicle(vehicles[i][j].getLicense(),vehicles[i][j].getSpeed());
+                resourcesHolder.releaseVehicle(deliveryVehicle);
+            }
+        }
         
+
+
+
 
 
 
