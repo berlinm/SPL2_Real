@@ -1,4 +1,6 @@
-package bgu.spl.mics;
+package bgu.spl.mics.Messages;
+
+import bgu.spl.mics.Event;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

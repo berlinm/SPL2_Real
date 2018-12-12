@@ -45,7 +45,7 @@ public class MessageBusImpl implements MessageBus {
 	@Override
 	public <T> void complete(Event<T> e, T result) {
 		this.EventFut.get(e).resolve(result);
-		this.EventFut.remove(e); //not sure
+		this.EventFut.remove(e);
 	}
 	@Override
 	public void sendBroadcast(Broadcast b) {

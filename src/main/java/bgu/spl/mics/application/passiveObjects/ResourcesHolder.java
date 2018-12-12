@@ -1,8 +1,6 @@
 package bgu.spl.mics.application.passiveObjects;
 
-import bgu.spl.mics.DeliveryEvent;
 import bgu.spl.mics.Future;
-import bgu.spl.mics.MessageBusImpl;
 
 import java.util.concurrent.*;
 
@@ -16,24 +14,20 @@ import java.util.concurrent.*;
  * You can add ONLY private methods and fields to this class.
  */
 public class ResourcesHolder {
-
-	private ResourcesHolder Instance=new ResourcesHolder();
-
-	private BlockingQueue<DeliveryVehicle> deliveryVehicles;
-	private BlockingDeque<Future<DeliveryVehicle>> unresolvedFuture;
+	private static ResourcesHolder Instance = new ResourcesHolder();
+	private BlockingQueue<DeliveryVehicle> freeVehicles;
+	private BlockingDeque<Future<DeliveryVehicle>> waitingFutures;
 	private Semaphore _sem;
-	/**
-     * Retrieves the single instance of this class.
-     */
 
 	private ResourcesHolder(){
-		_sem=new Semaphore(0);
-		deliveryVehicles=new LinkedBlockingQueue<DeliveryVehicle>();
-		unresolvedFuture=new LinkedBlockingDeque<Future<DeliveryVehicle>>();
+		freeVehicles = new LinkedBlockingQueue<DeliveryVehicle>();
+		waitingFutures = new LinkedBlockingDeque<Future<DeliveryVehicle>>();
 	}
-
-	public ResourcesHolder getInstance() {
-		return this.Instance;
+	/**
+	 * Retrieves the single instance of this class.
+	 */
+	public static ResourcesHolder getInstance() {
+		return Instance;
 	}
 	
 	/**
@@ -44,20 +38,17 @@ public class ResourcesHolder {
      * 			{@link DeliveryVehicle} when completed.   
      */
 	public Future<DeliveryVehicle> acquireVehicle() {
+		if (this._sem == null)
+			throw new NotInitializedSemaphore();
 		Future<DeliveryVehicle> future=new Future<DeliveryVehicle>();
-
 		if(_sem.tryAcquire()){
-
-			future.resolve(deliveryVehicles.remove());
-
-		}else {
-			unresolvedFuture.addLast(future);
-
+			future.resolve(freeVehicles.remove());
 		}
-
+		else {
+			waitingFutures.addLast(future);
+		}
 		return future;
 	}
-	
 	/**
      * Releases a specified vehicle, opening it again for the possibility of
      * acquisition.
@@ -65,17 +56,15 @@ public class ResourcesHolder {
      * @param vehicle	{@link DeliveryVehicle} to be released.
      */
 	public void releaseVehicle(DeliveryVehicle vehicle) {
-
-		if(unresolvedFuture.size()!=0) {
-			Future<DeliveryVehicle> future = unresolvedFuture.remove();
+		if (this._sem == null)
+			throw new NotInitializedSemaphore();
+		if(waitingFutures.size()!=0) {
+			Future<DeliveryVehicle> future = waitingFutures.remove();
 			future.resolve(vehicle);
 		} else {
-
-			deliveryVehicles.add(vehicle);
-			_sem.release();
+			freeVehicles.add(vehicle);
 		}
-
-
+		_sem.release();
 	}
 	
 	/**
@@ -84,12 +73,10 @@ public class ResourcesHolder {
      * @param vehicles	Array of {@link DeliveryVehicle} instances to store.
      */
 	public void load(DeliveryVehicle[] vehicles) {
-
+		_sem = new Semaphore(vehicles.length);
 		for(int i=0;i<vehicles.length;i++){
-
-			deliveryVehicles.add(vehicles[i]);
+			freeVehicles.add(vehicles[i]);
 		}
-
 	}
-
+	private class NotInitializedSemaphore extends RuntimeException{}
 }

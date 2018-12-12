@@ -1,6 +1,9 @@
 package bgu.spl.mics.application.services;
 
 import bgu.spl.mics.*;
+import bgu.spl.mics.Messages.BookOrderEvent;
+import bgu.spl.mics.Messages.DeliveryEvent;
+import bgu.spl.mics.Messages.TerminationBroadcast;
 import bgu.spl.mics.Messages.TickBroadcast;
 import bgu.spl.mics.application.passiveObjects.Customer;
 import bgu.spl.mics.application.passiveObjects.OrderReceipt;
@@ -49,7 +52,12 @@ public class APIService extends MicroService{
 						sendEvent(deliveryEvent);
 					}
 				}
-
+			}
+		});
+		subscribeBroadcast(TerminationBroadcast.class, new Callback<TerminationBroadcast>(){
+			@Override
+			public void call(TerminationBroadcast c){
+				unregister();
 				terminate();
 			}
 		});

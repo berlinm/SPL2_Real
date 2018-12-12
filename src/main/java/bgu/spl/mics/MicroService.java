@@ -173,4 +173,7 @@ public abstract class MicroService implements Runnable {
             }
         }
     }
+    protected final void unregister(){
+        MessageBusImpl.getInstance().unregister(this);
+    }
 }

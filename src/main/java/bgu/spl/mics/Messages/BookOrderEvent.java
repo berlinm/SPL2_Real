@@ -1,5 +1,6 @@
-package bgu.spl.mics;
+package bgu.spl.mics.Messages;
 
+import bgu.spl.mics.Event;
 import bgu.spl.mics.application.passiveObjects.Customer;
 import bgu.spl.mics.application.passiveObjects.OrderReceipt;
 

@@ -1,7 +1,9 @@
 package bgu.spl.mics.application.services;
 
-import bgu.spl.mics.CheckInventoryEvent;
+import bgu.spl.mics.Callback;
+import bgu.spl.mics.Messages.CheckInventoryEvent;
 import bgu.spl.mics.Future;
+import bgu.spl.mics.Messages.TerminationBroadcast;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.Messages.TakeBookEvent;
 import bgu.spl.mics.application.passiveObjects.Inventory;
@@ -31,26 +33,25 @@ public class InventoryService extends MicroService{
 	protected void initialize() {
 
 		subscribeEvent(CheckInventoryEvent.class,ev->{
-
-			int x=inventory.checkAvailabiltyAndGetPrice(ev.getName());
-			if(x==-1){
-				complete(ev,null);
-			}else {
-				Future<AtomicInteger> future=new Future<AtomicInteger>();
-				AtomicInteger atomicInteger=new AtomicInteger(x);
-				future.resolve(atomicInteger);
-				complete(ev,future.get());
+			int x = inventory.checkAvailabiltyAndGetPrice(ev.getName());
+			if(x == -1){
+				complete(ev,new AtomicInteger(-1));
 			}
-
-			terminate();
+			else {
+				AtomicInteger atomicInteger=new AtomicInteger(x);
+				complete(ev,atomicInteger);
+			}
 		});
-
-
 		subscribeEvent(TakeBookEvent.class,ev->{
 			OrderResult result=inventory.take(ev.getName());
-			terminate();
 		});
-		
+		subscribeBroadcast(TerminationBroadcast.class, new Callback<TerminationBroadcast>(){
+			@Override
+			public void call(TerminationBroadcast c){
+				unregister();
+				terminate();
+			}
+		});
 	}
 
 }

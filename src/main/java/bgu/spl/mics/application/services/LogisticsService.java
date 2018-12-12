@@ -1,8 +1,10 @@
 package bgu.spl.mics.application.services;
 
-import bgu.spl.mics.DeliveryEvent;
+import bgu.spl.mics.Callback;
+import bgu.spl.mics.Messages.DeliveryEvent;
 import bgu.spl.mics.Future;
-import bgu.spl.mics.InviteDriverEvent;
+import bgu.spl.mics.Messages.InviteDriverEvent;
+import bgu.spl.mics.Messages.TerminationBroadcast;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.passiveObjects.DeliveryVehicle;
 
@@ -32,7 +34,13 @@ public class LogisticsService extends MicroService {
 			mdv.deliver(ev.getCustomer().getAddress(),ev.getCustomer().getDistance());
 			terminate();
 		});
-		
+		subscribeBroadcast(TerminationBroadcast.class, new Callback<TerminationBroadcast>(){
+			@Override
+			public void call(TerminationBroadcast c){
+				unregister();
+				terminate();
+			}
+		});
 	}
 
 }

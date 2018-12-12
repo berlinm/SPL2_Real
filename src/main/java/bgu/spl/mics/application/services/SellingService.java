@@ -1,7 +1,7 @@
 package bgu.spl.mics.application.services;
 
 import bgu.spl.mics.*;
-import bgu.spl.mics.Messages.TakeBookEvent;
+import bgu.spl.mics.Messages.*;
 import bgu.spl.mics.application.passiveObjects.MoneyRegister;
 import bgu.spl.mics.application.passiveObjects.OrderReceipt;
 
@@ -20,7 +20,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SellingService extends MicroService {
 	private MoneyRegister moneyRegister;
 	int orders;
-
 	public SellingService(String name) {
 		super(name);
 		moneyRegister = MoneyRegister.getInstance();
@@ -32,28 +31,42 @@ public class SellingService extends MicroService {
 		subscribeEvent(BookOrderEvent.class, new Callback<BookOrderEvent>() {
 			@Override
 			public void call(BookOrderEvent orderEvent) {
+				//lets check the current tick for the proccessing tick
+				Future<AtomicInteger> currentTick = sendEvent(new AskForTickEvent());
+				int proccessingTick = currentTick.get().intValue();
+				//lets get price
 				CheckInventoryEvent invEvent = new CheckInventoryEvent(orderEvent.getOrderedBook());
 				Future<AtomicInteger> inventoryResult = sendEvent(invEvent);
 				int price = inventoryResult.get().intValue();
-				if (price >= 0) {
-					TakeBookEvent takeBookEvent = new TakeBookEvent(orderEvent.getOrderedBook());
-					sendEvent(takeBookEvent);
-					try {
-						moneyRegister.chargeCreditCard(orderEvent.getCustomer(), price);
-					} catch (Exception e) {
-						e.printStackTrace();
-						return;
-					}
-					//according orel there is a need of sending an event to the timer asking for the current tick. this tick will be the issuedTick
-					OrderReceipt orderReceipt = new OrderReceipt(orders, getName(), orderEvent.getCustomer().getId(), orderEvent.getOrderedBook(), inventoryResult.get().intValue(), orderEvent.getOrderTick(), orderEvent.getOrderTick(), orderEvent.getOrderTick());
-					complete(orderEvent, orderReceipt);
-					terminate();
-				} else {
-					System.out.println("This book don't exist or out of stock in our Inventory");
-					terminate();
+				if (price < 0){
+					System.out.println("Could not get books price");
+					return;
 				}
+				//lets take book
+				Future<Boolean> sendRes = sendEvent(new TakeBookEvent(orderEvent.getOrderedBook()));
+				if (!sendRes.get()){
+					System.out.println("Could not take book");
+					return;
+				}
+				try {
+					moneyRegister.chargeCreditCard(orderEvent.getCustomer(), price);
+				} catch (Exception e) {
+					e.printStackTrace();
+					return;
+				}
+				//lets get the current tick for the issued tick
+				Future<AtomicInteger> currentTick2 = sendEvent(new AskForTickEvent());
+				int issuedTick = currentTick.get().intValue();
+				OrderReceipt orderReceipt = new OrderReceipt(orders, getName(), orderEvent.getCustomer().getId(), orderEvent.getOrderedBook(), inventoryResult.get().intValue(), proccessingTick, orderEvent.getOrderTick(), issuedTick);
+				complete(orderEvent, orderReceipt);
 			}
 		});
-
+		subscribeBroadcast(TerminationBroadcast.class, new Callback<TerminationBroadcast>(){
+			@Override
+			public void call(TerminationBroadcast c){
+				unregister();
+				terminate();
+			}
+		});
 	}
 }

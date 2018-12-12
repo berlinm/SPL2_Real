@@ -1,7 +1,9 @@
 package bgu.spl.mics.application.services;
 
+import bgu.spl.mics.Callback;
 import bgu.spl.mics.Future;
-import bgu.spl.mics.InviteDriverEvent;
+import bgu.spl.mics.Messages.InviteDriverEvent;
+import bgu.spl.mics.Messages.TerminationBroadcast;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.passiveObjects.DeliveryVehicle;
 import bgu.spl.mics.application.passiveObjects.ResourcesHolder;
@@ -21,7 +23,7 @@ public class ResourceService extends MicroService{
 
 	public ResourceService() {
 		super("Resource Service");
-		resourcesHolder=ResourcesHolder.getInstance();
+		resourcesHolder = ResourcesHolder.getInstance();
 	}
 
 	@Override
@@ -31,7 +33,13 @@ public class ResourceService extends MicroService{
 			Future<DeliveryVehicle> result=resourcesHolder.acquireVehicle();
 			complete(ev,result.get());
 		});
-		
+		subscribeBroadcast(TerminationBroadcast.class, new Callback<TerminationBroadcast>(){
+			@Override
+			public void call(TerminationBroadcast c){
+				unregister();
+				terminate();
+			}
+		});
 	}
 
 }

@@ -1,6 +1,8 @@
 package bgu.spl.mics.application.services;
 
+import bgu.spl.mics.Callback;
 import bgu.spl.mics.MessageBusImpl;
+import bgu.spl.mics.Messages.AskForTickEvent;
 import bgu.spl.mics.Messages.TickBroadcast;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.passiveObjects.Inventory;
@@ -9,6 +11,7 @@ import bgu.spl.mics.application.passiveObjects.ResourcesHolder;
 
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * TimeService is the global system timer There is only one instance of this micro-service.
@@ -23,7 +26,7 @@ import java.util.TimerTask;
 public class TimeService extends MicroService{
 	private Timer m_Timer;
 	private int currentTick, duration, speed;
-	private TimeService(int speed, int duration) {
+	public TimeService(int speed, int duration) {
 		super("Global Timer");
 		this.currentTick = 0;
 		this.duration = duration;
@@ -38,16 +41,20 @@ public class TimeService extends MicroService{
 			public void run() {
 				if (currentTick < duration)
 				{
-					MessageBusImpl.getInstance().sendBroadcast(new TickBroadcast(currentTick));
+					sendBroadcast(new TickBroadcast(currentTick));
 					currentTick++;
 				}
 				else {
-					//means the timer is up longer than the set duration (need to be terminated?)
+					unregister();
+					terminate();
 				}
 			}
 		}, 0, this.speed);
-	}
-	public int getCurrentTick(){
-		return this.currentTick;
+		subscribeEvent(AskForTickEvent.class, new Callback<AskForTickEvent>() {
+			@Override
+			public void call(AskForTickEvent c) {
+				complete(c, new AtomicInteger(currentTick));
+			}
+		});
 	}
 }
