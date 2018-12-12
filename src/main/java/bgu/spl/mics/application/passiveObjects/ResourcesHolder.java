@@ -4,8 +4,7 @@ import bgu.spl.mics.DeliveryEvent;
 import bgu.spl.mics.Future;
 import bgu.spl.mics.MessageBusImpl;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.*;
 
 /**
  * Passive object representing the resource manager.
@@ -18,18 +17,23 @@ import java.util.concurrent.Semaphore;
  */
 public class ResourcesHolder {
 
-	BlockingQueue<DeliveryVehicle> deliveryVehicles;
-	Semaphore _sem;
+	private ResourcesHolder Instance=new ResourcesHolder();
+
+	private BlockingQueue<DeliveryVehicle> deliveryVehicles;
+	private BlockingDeque<Future<DeliveryVehicle>> unresolvedFuture;
+	private Semaphore _sem;
 	/**
      * Retrieves the single instance of this class.
      */
 
-	private  static class SingletonHolder{
-		private static ResourcesHolder instance=new ResourcesHolder();
+	private ResourcesHolder(){
+		_sem=new Semaphore(0);
+		deliveryVehicles=new LinkedBlockingQueue<DeliveryVehicle>();
+		unresolvedFuture=new LinkedBlockingDeque<Future<DeliveryVehicle>>();
 	}
 
-	public static ResourcesHolder getInstance() {
-		return SingletonHolder.instance;
+	public ResourcesHolder getInstance() {
+		return this.Instance;
 	}
 	
 	/**
@@ -40,7 +44,18 @@ public class ResourcesHolder {
      * 			{@link DeliveryVehicle} when completed.   
      */
 	public Future<DeliveryVehicle> acquireVehicle() {
-		return null;
+		Future<DeliveryVehicle> future=new Future<DeliveryVehicle>();
+
+		if(_sem.tryAcquire()){
+
+			future.resolve(deliveryVehicles.remove());
+
+		}else {
+			unresolvedFuture.addLast(future);
+
+		}
+
+		return future;
 	}
 	
 	/**
@@ -50,7 +65,17 @@ public class ResourcesHolder {
      * @param vehicle	{@link DeliveryVehicle} to be released.
      */
 	public void releaseVehicle(DeliveryVehicle vehicle) {
-		//TODO: Implement this
+
+		if(unresolvedFuture.size()!=0) {
+			Future<DeliveryVehicle> future = unresolvedFuture.remove();
+			future.resolve(vehicle);
+		} else {
+
+			deliveryVehicles.add(vehicle);
+			_sem.release();
+		}
+
+
 	}
 	
 	/**
@@ -65,7 +90,6 @@ public class ResourcesHolder {
 			deliveryVehicles.add(vehicles[i]);
 		}
 
-		_sem=new Semaphore(vehicles.length);
 	}
 
 }
