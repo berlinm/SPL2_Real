@@ -3,10 +3,20 @@ package bgu.spl.mics.application;
 
 import bgu.spl.mics.MessageBus;
 import bgu.spl.mics.MessageBusImpl;
+import bgu.spl.mics.Messages.BookOrderEvent;
+import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.passiveObjects.*;
+import bgu.spl.mics.application.services.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.sun.org.apache.xml.internal.security.Init;
+
 import java.io.*;
+import java.util.LinkedList;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /** This is the Main class of the application. You should parse the input file,
  * create the different instances of the objects, and run the system.
@@ -129,9 +139,9 @@ public class BookStoreRunner {
                 private int inventoryService;
                 private int logistic;
                 private int resourceService;
-                private Customers customers;
+                private InitCustomers customers;
 
-                public Services(Time time, int selling, int inventoryService, int logistic, int resourceService, Customers customers) {
+                public Services(Time time, int selling, int inventoryService, int logistic, int resourceService, InitCustomers customers) {
                     this.time = time;
                     this.selling = selling;
                     this.inventoryService = inventoryService;
@@ -140,7 +150,7 @@ public class BookStoreRunner {
                     this.customers = customers;
                 }
 
-                public Customers getCustomers() {
+                public InitCustomers getCustomers() {
                     return customers;
                 }
 
@@ -183,20 +193,20 @@ public class BookStoreRunner {
                 }
             }
 
-            class Customers {
+            class InitCustomers {
 
-                Customer[] customers;
+                initCustomer[] customers;
 
-                public Customers(Customer[] customers) {
+                public InitCustomers(initCustomer[] customers) {
                     this.customers = customers;
                 }
 
-                public Customer[] getCustomers() {
+                public initCustomer[] getCustomers() {
                     return customers;
                 }
             }
 
-            class Customer {
+            class initCustomer {
 
                 private int id;
                 private String name;
@@ -205,7 +215,7 @@ public class BookStoreRunner {
                 private CreditCard creditCard;
                 private OrderSchedule orderSchedule;
 
-                public Customer(int id, String name, String address, int distance, CreditCard creditCard, OrderSchedule orderSchedule) {
+                public initCustomer(int id, String name, String address, int distance, CreditCard creditCard, OrderSchedule orderSchedule) {
                     this.id = id;
                     this.name = name;
                     this.address = address;
@@ -319,14 +329,56 @@ public class BookStoreRunner {
             }
         }
 
+        JsonParser.Services services=jsonParser.getServices();
+
+        TimeService timeService=new TimeService(services.getTime().speed,services.getTime().duration);
+
+        LinkedList<MicroService> MicroServices=new LinkedList<>();
+
+        for(int i=0;i<services.selling;i++){
+            MicroServices.add(new SellingService("Selling Service "+i));
+        }
+        for(int i=0;i<services.inventoryService;i++){
+            MicroServices.add(new InventoryService("Inventory Service "+i));
+        }
+        for(int i=0;i<services.logistic;i++){
+            MicroServices.add(new LogisticsService("Logistic Service" +i));
+        }
+        for(int i=0;i<services.resourceService;i++){
+            MicroServices.add(new ResourceService("Resource Service "+i));
+        }
+
+        JsonParser.InitCustomers initCustomers=jsonParser.getServices().getCustomers();
+        JsonParser.initCustomer [] initCustomer=initCustomers.getCustomers();
+
+        for(int i=0;i<initCustomer.length;i++){
+
+            JsonParser.initCustomer customer=initCustomer[i];
+            Customer cs=new Customer(customer.getId(),customer.getName(),customer.getAddress(),customer.getDistance(),new LinkedList<OrderReceipt>(),customer.getCreditCard().getNumber(),customer.getCreditCard().getAmount());
+            ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>> myhash=new ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>>();
+
+            JsonParser.OrderSchedule orderSchedule=customer.orderSchedule;
+            JsonParser.BookByTick[] bookByTicks=orderSchedule.bookByTicks;
+            for(int j=0;j<bookByTicks.length;j++){
+                AtomicInteger integer=new AtomicInteger(bookByTicks[j].getTick());
+                if(myhash.containsKey(integer)){
+                    myhash.get(bookByTicks[j].getTick()).add(new BookOrderEvent(cs,bookByTicks[j].getBookTitle(),bookByTicks[j].getTick()));
+                }else{
+                    myhash.put(integer,new LinkedBlockingQueue<BookOrderEvent>());
+                    myhash.get(integer).add(new BookOrderEvent(cs,bookByTicks[j].getBookTitle(),bookByTicks[j].getTick()));
+                }
+            }
+
+            MicroServices.add(new APIService(myhash,cs));
+        }
 
 
 
+        for(int t=0;t<MicroServices.size();t++){
 
+            MicroServices.get(t).run();
+        }
 
-
-
-
-
+        timeService.run();
     }
 }
