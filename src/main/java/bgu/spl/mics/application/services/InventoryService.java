@@ -6,9 +6,12 @@ import bgu.spl.mics.Future;
 import bgu.spl.mics.Messages.TerminationBroadcast;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.Messages.TakeBookEvent;
+import bgu.spl.mics.application.passiveObjects.BookInventoryInfo;
 import bgu.spl.mics.application.passiveObjects.Inventory;
 import bgu.spl.mics.application.passiveObjects.OrderResult;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -23,12 +26,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class InventoryService extends MicroService{
 	Inventory inventory;
-
 	public InventoryService(String name) {
 		super(name);
 		inventory=Inventory.getInstance();
 	}
-
 	@Override
 	protected void initialize() {
 
