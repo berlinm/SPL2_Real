@@ -85,6 +85,9 @@ public class SellingService extends MicroService {
 				}
 				OrderReceipt orderReceipt = new OrderReceipt(orders, getName(), orderEvent.getCustomer().getId(), orderEvent.getOrderedBook(), inventoryResult.get().intValue(), proccessingTick, orderEvent.getOrderTick(), AtomicIssuedTick.intValue());
 				complete(orderEvent, orderReceipt);
+
+				DeliveryEvent deliveryEvent = new DeliveryEvent(orderEvent.getCustomer());
+				sendEvent(deliveryEvent);
 			}
 		});
 		subscribeBroadcast(TerminationBroadcast.class, new Callback<TerminationBroadcast>(){

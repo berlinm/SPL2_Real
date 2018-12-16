@@ -65,17 +65,18 @@ public class APIService extends MicroService{
 					for (BookOrderEvent bookOrderEvent : orderSchedule.get(Key)) {
 						Future<OrderReceipt> result = sendEvent(bookOrderEvent);
 						receiptFuture.add(result);
-						//if (result != null) {
-						//	customer.getCustomerReceiptList().add(orderReceipt);
-						//	DeliveryEvent deliveryEvent = new DeliveryEvent(customer);
-						//	sendEvent(deliveryEvent);
-						//}
 					}
 				}
 		});
 		subscribeBroadcast(TerminationBroadcast.class, new Callback<TerminationBroadcast>(){
 			@Override
 			public void call(TerminationBroadcast c){
+
+				for(int i=0;i<receiptFuture.size();i++){
+					if(receiptFuture.get(i).isDone()) {
+						customer.getCustomerReceiptList().add(receiptFuture.get(i).get());
+					}
+				}
 				unregister();
 				terminate();
 			}

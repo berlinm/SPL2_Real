@@ -329,18 +329,18 @@ public class BookStoreRunner {
             MicroServices.add(new APIService("API Service "+i, myhash,cs));
         }
         //Output 1: Customers
-        try {
+        //try {
             // Saving Customers in a file
-            FileOutputStream outCustomers = new FileOutputStream(args[1]);
-            ObjectOutputStream out = new ObjectOutputStream(outCustomers);
+            //FileOutputStream outCustomers = new FileOutputStream(args[1]);
+            //ObjectOutputStream out = new ObjectOutputStream(outCustomers);
             // Method for serialization of object
-            out.writeObject(Customers);
-            out.close();
-            outCustomers.close();
-        }
-        catch (IOException ex) {
-            System.out.println("IOException is caught");
-        }
+            //out.writeObject(Customers);
+            //out.close();
+          //  outCustomers.close();
+        //}
+        //catch (IOException ex) {
+        //    System.out.println("IOException is caught");
+      //  }
 
         Vector<Thread> threads=new Vector<Thread>();
 
