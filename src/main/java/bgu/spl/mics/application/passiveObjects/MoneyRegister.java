@@ -1,6 +1,12 @@
 package bgu.spl.mics.application.passiveObjects;
 
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -14,7 +20,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * <p>
  * You can add ONLY private fields and methods to this class as you see fit.
  */
-public class MoneyRegister {
+public class MoneyRegister implements Serializable {
 	private BlockingQueue<OrderReceipt> orderReceipts;
 	/**
      * Retrieves the single instance of this class.
@@ -32,7 +38,7 @@ public class MoneyRegister {
      * <p>   
      * @param r		The receipt to save in the money register.
      */
-	public void file (OrderReceipt r) {
+	public void file(OrderReceipt r) {
 		orderReceipts.add(r);
 	}
 	
@@ -68,6 +74,21 @@ public class MoneyRegister {
      * This method is called by the main method in order to generate the output.. 
      */
 	public void printOrderReceipts(String filename) {
-		//TODO: Implement this
+		//saving bookRemaining in a file
+		List<OrderReceipt> FinalOrderReceipts = new LinkedList<OrderReceipt>();
+		for (OrderReceipt o: orderReceipts) {
+			FinalOrderReceipts.add(o);
+		}
+		try {
+			//creating the hashmap of remaining books
+			FileOutputStream outBooks = new FileOutputStream
+					(filename);
+			ObjectOutputStream out = new ObjectOutputStream(outBooks);
+			// Method for serialization of object
+			out.writeObject(FinalOrderReceipts);
+			out.close();
+			outBooks.close();
+		}
+		catch (IOException e){}
 	}
 }

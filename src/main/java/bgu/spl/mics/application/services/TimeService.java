@@ -3,6 +3,7 @@ package bgu.spl.mics.application.services;
 import bgu.spl.mics.Callback;
 import bgu.spl.mics.MessageBusImpl;
 import bgu.spl.mics.Messages.AskForTickEvent;
+import bgu.spl.mics.Messages.TerminationBroadcast;
 import bgu.spl.mics.Messages.TickBroadcast;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.passiveObjects.Inventory;
@@ -45,6 +46,7 @@ public class TimeService extends MicroService{
 					currentTick++;
 				}
 				else {
+					sendBroadcast(new TerminationBroadcast());
 					unregister();
 					terminate();
 				}

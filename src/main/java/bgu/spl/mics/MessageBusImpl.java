@@ -1,5 +1,7 @@
 package bgu.spl.mics;
 
+import bgu.spl.mics.Messages.TerminationBroadcast;
+
 import java.util.concurrent.*;
 
 /**
@@ -113,15 +115,20 @@ public class MessageBusImpl implements MessageBus {
 	@Override
 	public  Message awaitMessage(MicroService m) throws InterruptedException {
 		if(!this.srvQueue.containsKey(m)){
-			this.srvQueue.put(m,new LinkedBlockingQueue<Message>());
+			this.srvQueue.put(m ,new LinkedBlockingQueue<Message>());
 		}
 			while (this.srvQueue.get(m).isEmpty()) {
 				try {
-					synchronized (m) {
+					synchronized(m) {
 						m.wait();
 					}
 				}catch (Exception e){e.printStackTrace();}
 			}
+		for (Message message: srvQueue.get(m)) {
+			if (message instanceof TerminationBroadcast){
+				return message;
+			}
+		}
 			return this.srvQueue.get(m).remove();
 	}
 

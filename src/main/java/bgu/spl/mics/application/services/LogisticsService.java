@@ -27,7 +27,6 @@ public class LogisticsService extends MicroService {
 	protected void initialize() {
 
 		subscribeEvent(DeliveryEvent.class,ev->{
-
 			InviteDriverEvent IDE=new InviteDriverEvent();
 			Future<DeliveryVehicle> myDelivery=sendEvent(IDE);
 			DeliveryVehicle mdv=myDelivery.get();

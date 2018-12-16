@@ -12,12 +12,14 @@ import com.google.gson.GsonBuilder;
 import com.sun.org.apache.xml.internal.security.Init;
 
 import java.io.*;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Vector;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.io.*;
 
 /** This is the Main class of the application. You should parse the input file,
  * create the different instances of the objects, and run the system.
@@ -252,7 +254,7 @@ public class BookStoreRunner {
 
 
     public static void main(String[] args) {
-
+        ConcurrentHashMap<Integer, Customer> Customers = new ConcurrentHashMap<Integer, Customer>();
         JsonParser jsonParser=null;
 
         try(Reader reader=new FileReader(args[0])) {
@@ -309,7 +311,8 @@ public class BookStoreRunner {
         for(int i=0;i<initCustomers.length;i++){
 
             JsonParser.customers customer=initCustomers[i];
-            Customer cs=new Customer(customer.getId(),customer.getName(),customer.getAddress(),customer.getDistance(),new LinkedList<OrderReceipt>(),customer.getCreditCard().getNumber(),customer.getCreditCard().getAmount());
+            Customer cs = new Customer(customer.getId(),customer.getName(),customer.getAddress(),customer.getDistance(),new LinkedList<OrderReceipt>(),customer.getCreditCard().getNumber(),customer.getCreditCard().getAmount());
+            Customers.put(cs.getId(), cs);
             ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>> myhash=new ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>>();
 
             JsonParser.orderSchedule[] orderSchedule=customer.getOrderSchedule();
@@ -325,7 +328,19 @@ public class BookStoreRunner {
 
             MicroServices.add(new APIService("API Service "+i, myhash,cs));
         }
-
+        //Output 1: Customers
+        try {
+            // Saving Customers in a file
+            FileOutputStream outCustomers = new FileOutputStream(args[1]);
+            ObjectOutputStream out = new ObjectOutputStream(outCustomers);
+            // Method for serialization of object
+            out.writeObject(Customers);
+            out.close();
+            outCustomers.close();
+        }
+        catch (IOException ex) {
+            System.out.println("IOException is caught");
+        }
 
         Vector<Thread> threads=new Vector<Thread>();
 
@@ -345,12 +360,24 @@ public class BookStoreRunner {
             try{ threads.get(i).join();}
             catch (Exception e) {e.printStackTrace();}
         }
-
-
-        Inventory.getInstance().printInventoryToFile(args[1]);
-        MoneyRegister.getInstance().printOrderReceipts(args[2]);
-
-
-
+        //Output 2: Books
+        Inventory.getInstance().printInventoryToFile(args[2]);
+        //Output 3: Receipts
+        MoneyRegister.getInstance().printOrderReceipts(args[3]);
+        //Output 4:
+        try {
+            // Saving Customers in a file
+            FileOutputStream outMoneyRegister = new FileOutputStream
+                    (args[4]);
+            ObjectOutputStream out1 = new ObjectOutputStream
+                    (outMoneyRegister);
+            // Method for serialization of object
+            out1.writeObject(MoneyRegister.getInstance());
+            out1.close();
+            outMoneyRegister.close();
+        }
+        catch (IOException ex) {
+            System.out.println("IOException is caught");
+        }
     }
 }
