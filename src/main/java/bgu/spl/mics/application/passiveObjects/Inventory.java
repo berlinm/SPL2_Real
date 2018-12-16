@@ -81,11 +81,11 @@ public class Inventory {
 		Iterator<BookInventoryInfo> it = bookInventoryInfos.iterator();
 		while (it.hasNext()){
 			BookInventoryInfo curr = it.next();
-			if(curr.getBookTitle() == book && curr.getAmountInInventory() > 0){
+			if(curr.getBookTitle().equals(book) && curr.getAmountInInventory() > 0){
 				price = curr.getPrice();
 			}
 		}
-		if (price != -1 && BookSemaphoreHolder.getInstance().tryAcquire(book)){
+		if (price != -1){ //&& BookSemaphoreHolder.getInstance().tryAcquire(book)){
 			return price;
 		}
 		return -1;

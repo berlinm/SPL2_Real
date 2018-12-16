@@ -19,30 +19,25 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class SellingService extends MicroService {
 	private MoneyRegister moneyRegister;
+	int CurrentTick;
 	int orders;
 	public SellingService(String name) {
 		super(name);
 		moneyRegister = MoneyRegister.getInstance();
 		orders=0;
+		CurrentTick=0;
 	}
 
 	@Override
 	protected void initialize() {
+
+		subscribeBroadcast(TickBroadcast.class,brod-> {
+			CurrentTick=brod.getCurrentTick();
+				});
 		subscribeEvent(BookOrderEvent.class, new Callback<BookOrderEvent>() {
 			@Override
 			public void call(BookOrderEvent orderEvent) {
 				System.out.println(getName()+" got new event from " +orderEvent.getClass().getName());
-				//lets check the current tick for the proccessing tick
-				Future<AtomicInteger> currentTick = sendEvent(new AskForTickEvent());
-				AtomicInteger AtomicProccessingTick = currentTick.get();
-				//if the future result is null - there are not a service available for the request - HAZLESH!
-				if (AtomicProccessingTick == null){
-					throw new TimerServiceDoesnNotExistException("Ask for tick resolved as null. TimeService does not exist?");
-				}
-				int proccessingTick = currentTick.get().intValue();
-				//lets get price
-
-				System.out.println("Ready");
 				CheckInventoryEvent invEvent = new CheckInventoryEvent(orderEvent.getOrderedBook());
 				Future<AtomicInteger> inventoryResult = sendEvent(invEvent);
 				AtomicInteger atomicPrice = inventoryResult.get();
@@ -83,7 +78,7 @@ public class SellingService extends MicroService {
 					BookSemaphoreHolder.getInstance().release(orderEvent.getOrderedBook());
 					throw new TimerServiceDoesnNotExistException("Ask for tick resolved as null. TimeService does not exist?");
 				}
-				OrderReceipt orderReceipt = new OrderReceipt(orders, getName(), orderEvent.getCustomer().getId(), orderEvent.getOrderedBook(), inventoryResult.get().intValue(), proccessingTick, orderEvent.getOrderTick(), AtomicIssuedTick.intValue());
+				OrderReceipt orderReceipt = new OrderReceipt(orders, getName(), orderEvent.getCustomer().getId(), orderEvent.getOrderedBook(), inventoryResult.get().intValue(), CurrentTick, orderEvent.getOrderTick(), CurrentTick);
 				complete(orderEvent, orderReceipt);
 
 				DeliveryEvent deliveryEvent = new DeliveryEvent(orderEvent.getCustomer());
