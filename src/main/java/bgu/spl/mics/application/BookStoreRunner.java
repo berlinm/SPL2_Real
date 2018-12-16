@@ -329,11 +329,13 @@ public class BookStoreRunner {
 
         Vector<Thread> threads=new Vector<Thread>();
 
+        threads.add(new Thread(timeService));
+
         for(int j=0;j<MicroServices.size();j++){
             threads.add(new Thread(MicroServices.get(j)));
         }
 
-        threads.add(new Thread(timeService));
+
 
         for(int x=0;x<threads.size();x++) {
             threads.get(x).start();

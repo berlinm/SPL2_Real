@@ -41,15 +41,17 @@ public class APIService extends MicroService{
 		subscribeBroadcast(TickBroadcast.class, new Callback<TickBroadcast>() {
 			@Override
 			public void call(TickBroadcast c) {
-				System.out.println("API Service "+getName()+"got broadcast from" + TickBroadcast.class.getName());
-				for (BookOrderEvent bookOrderEvent: orderSchedule.get(c.getCurrentTick()))
-				{
-					Future<OrderReceipt> result =sendEvent(bookOrderEvent);
-					if(result!=null) {
-						OrderReceipt orderReceipt = result.get();
-						customer.getCustomerReceiptList().add(orderReceipt);
-						DeliveryEvent deliveryEvent = new DeliveryEvent(customer);
-						sendEvent(deliveryEvent);
+				System.out.println(getName()+" got broadcast from" + TickBroadcast.class.getName());
+
+				if(orderSchedule.containsKey(c.getCurrentTick())) {
+					for (BookOrderEvent bookOrderEvent : orderSchedule.get(c.getCurrentTick())) {
+						Future<OrderReceipt> result = sendEvent(bookOrderEvent);
+						if (result != null) {
+							OrderReceipt orderReceipt = result.get();
+							customer.getCustomerReceiptList().add(orderReceipt);
+							DeliveryEvent deliveryEvent = new DeliveryEvent(customer);
+							sendEvent(deliveryEvent);
+						}
 					}
 				}
 			}

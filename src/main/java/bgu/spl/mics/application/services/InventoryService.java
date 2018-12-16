@@ -34,10 +34,12 @@ public class InventoryService extends MicroService{
 	protected void initialize() {
 
 		subscribeEvent(CheckInventoryEvent.class,checkInventoryEvent->{
+			System.out.println(getName()+" got new event from "+checkInventoryEvent.getName());
 			int price = inventory.checkAvailabiltyAndGetPrice(checkInventoryEvent.getName());
 			complete(checkInventoryEvent,new AtomicInteger(price));
 		});
 		subscribeEvent(TakeBookEvent.class,takeBookEvent ->{
+			System.out.println(getName()+" got event from "+takeBookEvent.getName());
 			OrderResult result = inventory.take(takeBookEvent.getName());
 			if (result == OrderResult.NOT_IN_STOCK) {
 				complete(takeBookEvent, false);
@@ -47,6 +49,7 @@ public class InventoryService extends MicroService{
 		subscribeBroadcast(TerminationBroadcast.class, new Callback<TerminationBroadcast>(){
 			@Override
 			public void call(TerminationBroadcast c){
+				System.out.println("All Microservices are Terminated");
 				unregister();
 				terminate();
 			}

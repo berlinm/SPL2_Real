@@ -31,6 +31,7 @@ public class SellingService extends MicroService {
 		subscribeEvent(BookOrderEvent.class, new Callback<BookOrderEvent>() {
 			@Override
 			public void call(BookOrderEvent orderEvent) {
+				System.out.println(getName()+" got new event from " +orderEvent.getClass().getName());
 				//lets check the current tick for the proccessing tick
 				Future<AtomicInteger> currentTick = sendEvent(new AskForTickEvent());
 				AtomicInteger AtomicProccessingTick = currentTick.get();
@@ -87,6 +88,7 @@ public class SellingService extends MicroService {
 		subscribeBroadcast(TerminationBroadcast.class, new Callback<TerminationBroadcast>(){
 			@Override
 			public void call(TerminationBroadcast c){
+				System.out.println("All Microservices are Terminated");
 				unregister();
 				terminate();
 			}
