@@ -13,6 +13,7 @@ import com.sun.org.apache.xml.internal.security.Init;
 
 import java.io.*;
 import java.util.LinkedList;
+import java.util.Vector;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -326,12 +327,28 @@ public class BookStoreRunner {
         }
 
 
+        Vector<Thread> threads=new Vector<Thread>();
 
-        for(int t=0;t<MicroServices.size();t++){
-
-            MicroServices.get(t).run();
+        for(int j=0;j<MicroServices.size();j++){
+            threads.add(new Thread(MicroServices.get(j)));
         }
 
-        timeService.run();
+        threads.add(new Thread(timeService));
+
+        for(int x=0;x<threads.size();x++) {
+            threads.get(x).start();
+        }
+
+        for (int i=0;i<threads.size();i++) {
+            try{ threads.get(i).join();}
+            catch (Exception e) {e.printStackTrace();}
+        }
+
+
+        Inventory.getInstance().printInventoryToFile(args[1]);
+        MoneyRegister.getInstance().printOrderReceipts(args[2]);
+        
+
+
     }
 }
