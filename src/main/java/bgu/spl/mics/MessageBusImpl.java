@@ -1,6 +1,8 @@
 package bgu.spl.mics;
 
+import bgu.spl.mics.Messages.AskForTickEvent;
 import bgu.spl.mics.Messages.TerminationBroadcast;
+import bgu.spl.mics.application.services.TimeService;
 
 import java.util.concurrent.*;
 
@@ -63,24 +65,30 @@ public class MessageBusImpl implements MessageBus {
 		}
 	}
 	@Override
-	public synchronized  <T> Future<T> sendEvent(Event<T> e) { //changes some things to fix sone problem orel had need to be checked
+	public <T> Future<T> sendEvent(Event<T> e) { //changes some things to fix sone problem orel had need to be checked
+		if (e instanceof AskForTickEvent)
+			System.out.println("Ask for tick event now sent to the buss");
 		Future<T> res=new Future<T>();
-
 		if(this.EventSubscribe.get(e.getClass()).size()>1) {
 			MicroService m = this.EventSubscribe.get(e.getClass()).remove();
 			this.EventSubscribe.get(e.getClass()).add(m);
 			srvQueue.get(m).add(e);
 			this.EventFut.put(e, res);
+			if (m instanceof TimeService)
+				System.out.println("Time service has job to do");
 			synchronized (m) {
 				m.notify();
 			}
-
-		} else if(this.EventSubscribe.get(e.getClass()).size()<=0){
+		} else if(this.EventSubscribe.get(e.getClass()).size()==0){
+			//then no microservice to send the event to
 			res.resolve(null);
 		} else {
 			MicroService m=this.EventSubscribe.get(e.getClass()).peek();
 			srvQueue.get(m).add(e);
-			this.EventFut.put(e,res);
+			this.EventFut.put(e, res);
+			synchronized (m) {
+				m.notify();
+			}
 		}
 		return res;
 	}
@@ -89,7 +97,6 @@ public class MessageBusImpl implements MessageBus {
 		BlockingQueue<Message> myqueue=new LinkedBlockingQueue<Message>();
 		srvQueue.put(m,myqueue);
 	}
-
 	@Override
 	public synchronized void unregister(MicroService m) {
 		//lets remove all broadcasts subscriptions
@@ -113,25 +120,25 @@ public class MessageBusImpl implements MessageBus {
 	//I think that because each MicroService is calling this method with (this) as argument, no concurrency problems here,
 	//but needs to be checked again
 	@Override
-	public  Message awaitMessage(MicroService m) throws InterruptedException {
+	public Message awaitMessage(MicroService m) throws InterruptedException {
+		if (m instanceof TimeService)
+			System.out.println("Time service awaits message");
 		if(!this.srvQueue.containsKey(m)){
 			this.srvQueue.put(m ,new LinkedBlockingQueue<Message>());
 		}
-			while (this.srvQueue.get(m).isEmpty()) {
-				try {
-					synchronized(m) {
-						m.wait();
-					}
-				}catch (Exception e){e.printStackTrace();}
-			}
+		while (this.srvQueue.get(m).isEmpty()) {
+			try {
+				synchronized(m) {
+					m.wait();
+				}
+			}catch (Exception e){e.printStackTrace();}
+		}
 		for (Message message: srvQueue.get(m)) {
 			if (message instanceof TerminationBroadcast){
+				srvQueue.get(m).remove(message);
 				return message;
 			}
 		}
 			return this.srvQueue.get(m).remove();
 	}
-
-	
-
 }

@@ -309,49 +309,28 @@ public class BookStoreRunner {
         JsonParser.customers [] initCustomers=jsonParser.getServices().getCustomers();
 
         for(int i=0;i<initCustomers.length;i++){
-
             JsonParser.customers customer=initCustomers[i];
             Customer cs = new Customer(customer.getId(),customer.getName(),customer.getAddress(),customer.getDistance(),new LinkedList<OrderReceipt>(),customer.getCreditCard().getNumber(),customer.getCreditCard().getAmount());
             Customers.put(cs.getId(), cs);
-            ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>> myhash=new ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>>();
-
-            JsonParser.orderSchedule[] orderSchedule=customer.getOrderSchedule();
-            for(int j=0;j<orderSchedule.length;j++){
-                AtomicInteger integer=new AtomicInteger(orderSchedule[j].getTick());
-                if(myhash.containsKey(integer)){
-                    myhash.get(orderSchedule[j].getTick()).add(new BookOrderEvent(cs,orderSchedule[j].getBookTitle(),orderSchedule[j].getTick()));
-                }else{
-                    myhash.put(integer,new LinkedBlockingQueue<BookOrderEvent>());
-                    myhash.get(integer).add(new BookOrderEvent(cs,orderSchedule[j].getBookTitle(),orderSchedule[j].getTick()));
+            ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>> TickToOrderListHashMap = new ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>>();
+            JsonParser.orderSchedule[] orderSchedule = customer.getOrderSchedule();
+            for(int j = 0; j < orderSchedule.length ; j++){
+                AtomicInteger tick = new AtomicInteger(orderSchedule[j].getTick());
+                if(TickToOrderListHashMap.containsKey(tick)){
+                    TickToOrderListHashMap.get(tick.intValue()).add(new BookOrderEvent(cs,orderSchedule[j].getBookTitle(),orderSchedule[j].getTick(), "API Service " + i));
+                }
+                else{
+                    TickToOrderListHashMap.put(tick, new LinkedBlockingQueue<BookOrderEvent>());
+                    TickToOrderListHashMap.get(tick).add(new BookOrderEvent(cs,orderSchedule[j].getBookTitle(),orderSchedule[j].getTick(), "API Service " + i));
                 }
             }
-
-            MicroServices.add(new APIService("API Service "+i, myhash,cs));
+            MicroServices.add(new APIService("API Service " + i, TickToOrderListHashMap,cs));
         }
-        //Output 1: Customers
-        //try {
-            // Saving Customers in a file
-            //FileOutputStream outCustomers = new FileOutputStream(args[1]);
-            //ObjectOutputStream out = new ObjectOutputStream(outCustomers);
-            // Method for serialization of object
-            //out.writeObject(Customers);
-            //out.close();
-          //  outCustomers.close();
-        //}
-        //catch (IOException ex) {
-        //    System.out.println("IOException is caught");
-      //  }
-
-        Vector<Thread> threads=new Vector<Thread>();
-
+        Vector<Thread> threads = new Vector<Thread>();
         threads.add(new Thread(timeService));
-
-        for(int j=0;j<MicroServices.size();j++){
+        for(int j = 0; j < MicroServices.size(); j++){
             threads.add(new Thread(MicroServices.get(j)));
         }
-
-
-
         for(int x=0;x<threads.size();x++) {
             threads.get(x).start();
         }
@@ -360,6 +339,20 @@ public class BookStoreRunner {
             try{ threads.get(i).join();}
             catch (Exception e) {e.printStackTrace();}
         }
+        //Output 1: Customers
+        try {
+        // Saving Customers in a file
+        FileOutputStream outCustomers = new FileOutputStream(args[1]);
+        ObjectOutputStream out = new ObjectOutputStream(outCustomers);
+        // Method for serialization of object
+        out.writeObject(Customers);
+        out.close();
+        outCustomers.close();
+        }
+        catch (IOException ex) {
+            System.out.println("IOException is caught");
+        }
+
         //Output 2: Books
         Inventory.getInstance().printInventoryToFile(args[2]);
         //Output 3: Receipts

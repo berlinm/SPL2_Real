@@ -25,20 +25,26 @@ public class LogisticsService extends MicroService {
 
 	@Override
 	protected void initialize() {
-
+		System.out.println(this.getName() + " Initialization started");
 		subscribeEvent(DeliveryEvent.class,ev->{
+			System.out.println(getName() + " got DeliveryEvent from " + ev.getSenderName() +  "( Customer: " + ev.getCustomer().getName() + ")");
 			InviteDriverEvent IDE=new InviteDriverEvent();
 			Future<DeliveryVehicle> myDelivery=sendEvent(IDE);
 			DeliveryVehicle mdv=myDelivery.get();
 			mdv.deliver(ev.getCustomer().getAddress(),ev.getCustomer().getDistance());
+			System.out.println(getName() + " finished executing DeliveryEvent from " + ev.getSenderName() +  "( Customer: " + ev.getCustomer().getName() + ")");
 		});
 		subscribeBroadcast(TerminationBroadcast.class, new Callback<TerminationBroadcast>(){
 			@Override
 			public void call(TerminationBroadcast c){
+				System.out.println(getName() + " got Termination Broadcast");
 				unregister();
 				terminate();
+				System.out.println(getName() + " Terminated");
 			}
 		});
+		System.out.println(this.getName() + " Initialization ended");
+
 	}
 
 }

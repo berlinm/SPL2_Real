@@ -36,8 +36,9 @@ public class TimeService extends MicroService{
 	//TODO: comment inside
 	@Override
 	protected void initialize() {
+		System.out.println(this.getName() + " Initialization started");
 		this.m_Timer = new Timer();
-		this.m_Timer.scheduleAtFixedRate(new TimerTask() {
+		this.m_Timer.schedule(new TimerTask() {
 			@Override
 			public void run() {
 				if (currentTick < duration)
@@ -55,8 +56,10 @@ public class TimeService extends MicroService{
 		subscribeEvent(AskForTickEvent.class, new Callback<AskForTickEvent>() {
 			@Override
 			public void call(AskForTickEvent c) {
+				System.out.println("Timer received AskForTickEvent, Current Tick" + currentTick);
 				complete(c, new AtomicInteger(currentTick));
 			}
 		});
+		System.out.println(this.getName() + " Initialization ended");
 	}
 }

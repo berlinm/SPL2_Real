@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * You MAY change constructor signatures and even add new public constructors.
  */
 public class APIService extends MicroService{
-	private ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>> orderSchedule;
+	protected ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>> orderSchedule;
 	private Customer customer;
 	private List<Future<OrderReceipt>> receiptFuture;
 	public APIService(String name,ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>> orderSchedule,Customer customer) {
@@ -36,42 +36,32 @@ public class APIService extends MicroService{
 		}
 		this.orderSchedule = orderSchedule;
 		this.customer=customer;
-		receiptFuture=new LinkedList<Future<OrderReceipt>>();
+		receiptFuture=new LinkedList<>();
 	}
 
 	public ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>> getOrderSchedule() {
 		return orderSchedule;
 	}
-
 	@Override
 	protected void initialize() {
-		System.out.println(this.getName()+" started");
+		System.out.println(this.getName() + " Initialization started");
 		Customer customer=this.customer;
 		subscribeBroadcast(TickBroadcast.class, c -> {
-				System.out.println(getName()+" got broadcast from" + c.getClass().getName()+" Curr tick: "+c.getCurrentTick());
-
-				Enumeration<AtomicInteger> emu=this.getOrderSchedule().keys();
-				AtomicInteger Key=null;
-				boolean b=false;
-				while (emu.hasMoreElements()){
-					AtomicInteger next=emu.nextElement();
-					if(next.intValue()==c.getCurrentTick()){
-						b=true;
-						Key=next;
-					}
-				}
-
-				if(b){
-					for (BookOrderEvent bookOrderEvent : orderSchedule.get(Key)) {
+			System.out.println(getName() + " got Tick broadcast, Curr tick: " + c.getCurrentTick());
+			for (AtomicInteger a: orderSchedule.keySet()) {
+				if (a.intValue() == c.getCurrentTick()){
+					for (BookOrderEvent bookOrderEvent : this.orderSchedule.get(a)) {
 						Future<OrderReceipt> result = sendEvent(bookOrderEvent);
 						receiptFuture.add(result);
 					}
 				}
+			}
+			System.out.println(getName() + " finished Tick broadcast execution, Curr tick: "+c.getCurrentTick());
 		});
 		subscribeBroadcast(TerminationBroadcast.class, new Callback<TerminationBroadcast>(){
 			@Override
 			public void call(TerminationBroadcast c){
-
+				System.out.println(getName() + " got Termination Broadcast");
 				for(int i=0;i<receiptFuture.size();i++){
 					if(receiptFuture.get(i).isDone()) {
 						customer.getCustomerReceiptList().add(receiptFuture.get(i).get());
@@ -79,9 +69,9 @@ public class APIService extends MicroService{
 				}
 				unregister();
 				terminate();
+				System.out.println(getName() + "Terminated");
 			}
 		});
-		
+		System.out.println(getName() + " Initialization ended");
 	}
-
 }

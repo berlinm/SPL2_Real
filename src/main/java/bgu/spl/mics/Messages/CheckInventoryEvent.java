@@ -6,13 +6,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class CheckInventoryEvent implements Event<AtomicInteger> {
 
-    private String name;
-
-    public CheckInventoryEvent(String name){
-        this.name=name;
+    private String getBookName;
+    private String sender;
+    public CheckInventoryEvent(String bookName, String sender){
+        this.getBookName =bookName;
+        this.sender = sender;
     }
-
-    public String getName(){
-        return this.name;
+    public String getSender(){
+        return this.sender;
+    }
+    public String getBookName(){
+        return this.getBookName;
     }
 }

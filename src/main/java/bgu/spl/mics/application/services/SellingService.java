@@ -19,28 +19,24 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class SellingService extends MicroService {
 	private MoneyRegister moneyRegister;
-	int CurrentTick;
 	int orders;
 	public SellingService(String name) {
 		super(name);
 		moneyRegister = MoneyRegister.getInstance();
 		orders=0;
-		CurrentTick=0;
 	}
 
 	@Override
 	protected void initialize() {
-
-		subscribeBroadcast(TickBroadcast.class,brod-> {
-			CurrentTick=brod.getCurrentTick();
-				});
+		System.out.println(this.getName() + " Initialization started");
 		subscribeEvent(BookOrderEvent.class, new Callback<BookOrderEvent>() {
 			@Override
 			public void call(BookOrderEvent orderEvent) {
-				System.out.println(getName()+" got new event from " +orderEvent.getClass().getName());
-				CheckInventoryEvent invEvent = new CheckInventoryEvent(orderEvent.getOrderedBook());
-				Future<AtomicInteger> inventoryResult = sendEvent(invEvent);
-				AtomicInteger atomicPrice = inventoryResult.get();
+				System.out.println(getName() + " got new BookOrderEvent from " + orderEvent.getSenderName() + "(Book: " + orderEvent.getOrderedBook() + ", ordered tick:" + orderEvent.getOrderTick() + ")");
+				int proccessingTick = sendEvent(new AskForTickEvent()).get().intValue();
+				CheckInventoryEvent invEvent = new CheckInventoryEvent(orderEvent.getOrderedBook(), getName());
+				Future<AtomicInteger> checkInventoryResult = sendEvent(invEvent);
+				AtomicInteger atomicPrice = checkInventoryResult.get();
 				if (atomicPrice == null){
 					throw new TimerServiceDoesnNotExistException("Ask for tick resolved as null. TimeService does not exist?");
 				}
@@ -59,7 +55,7 @@ public class SellingService extends MicroService {
 					return;
 				}
 				//lets take book
-				Future<Boolean> takeRes = sendEvent(new TakeBookEvent(orderEvent.getOrderedBook()));
+				Future<Boolean> takeRes = sendEvent(new TakeBookEvent(orderEvent.getOrderedBook(), getName()));
 				Boolean isTakeBookSucceeded = takeRes.get();
 				//if the future result is null - there are not a service available for the request - HAZLESH!
 				if (isTakeBookSucceeded == null){
@@ -73,26 +69,30 @@ public class SellingService extends MicroService {
 				}
 				//lets get the current tick for the issued tick
 				Future<AtomicInteger> issuedTick = sendEvent(new AskForTickEvent());
-				AtomicInteger AtomicIssuedTick = issuedTick.get();
 				if (isTakeBookSucceeded == null){
 					BookSemaphoreHolder.getInstance().release(orderEvent.getOrderedBook());
 					throw new TimerServiceDoesnNotExistException("Ask for tick resolved as null. TimeService does not exist?");
 				}
-				OrderReceipt orderReceipt = new OrderReceipt(orders, getName(), orderEvent.getCustomer().getId(), orderEvent.getOrderedBook(), inventoryResult.get().intValue(), CurrentTick, orderEvent.getOrderTick(), CurrentTick);
+				OrderReceipt orderReceipt = new OrderReceipt(orders, getName(), orderEvent.getCustomer().getId(), orderEvent.getOrderedBook(), checkInventoryResult.get().intValue(), proccessingTick , orderEvent.getOrderTick(), issuedTick.get().intValue());
+				Future<Boolean> deliveryRes = null;
+				do {
+					DeliveryEvent deliveryEvent = new DeliveryEvent(orderEvent.getCustomer(), getName());
+					deliveryRes = sendEvent(deliveryEvent);
+				} while (!deliveryRes.get());
 				complete(orderEvent, orderReceipt);
-
-				DeliveryEvent deliveryEvent = new DeliveryEvent(orderEvent.getCustomer());
-				sendEvent(deliveryEvent);
+				System.out.println(getName() + " finished executing BookOrderEvent from " + orderEvent.getSenderName() + "(Book: " + orderEvent.getOrderedBook() + ", ordered tick:" + orderEvent.getOrderTick() + ")");
 			}
 		});
 		subscribeBroadcast(TerminationBroadcast.class, new Callback<TerminationBroadcast>(){
 			@Override
 			public void call(TerminationBroadcast c){
-				System.out.println("All Microservices are Terminated");
+				System.out.println(getName() + " got Termination Broadcast");
 				unregister();
 				terminate();
+				System.out.println(getName() + " Terminated");
 			}
 		});
+		System.out.println(this.getName() + " Initialization ended");
 	}
 	private class BookNotInInventoryException extends RuntimeException{
 		private String doc;

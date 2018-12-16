@@ -8,17 +8,18 @@ public class BookOrderEvent implements Event<OrderReceipt> {
     private Customer customer;
     private String  orderedBook;
     private int orderTick;
-
-    public BookOrderEvent(Customer customer,String orderedBook,int orderTick){
+    private String senderName;
+    public BookOrderEvent(Customer customer,String orderedBook,int orderTick, String senderName){
         this.customer=customer;
         this.orderedBook=orderedBook;
         this.orderTick=orderTick;
+        this.senderName = senderName;
     }
 
     public Customer getCustomer() {
         return customer;
     }
-
+    public String getSenderName(){return this.senderName;}
     public String getOrderedBook() {
         return orderedBook;
     }

@@ -28,18 +28,23 @@ public class ResourceService extends MicroService{
 
 	@Override
 	protected void initialize() {
-
+		System.out.println(this.getName() + " Initialization started");
 		subscribeEvent(InviteDriverEvent.class,ev->{
+			System.out.println(getName() + " got InviteDriverEvent");
 			Future<DeliveryVehicle> result=resourcesHolder.acquireVehicle();
 			complete(ev,result.get());
+			System.out.println(getName() + " finished executing InviteDriverEvent");
 		});
 		subscribeBroadcast(TerminationBroadcast.class, new Callback<TerminationBroadcast>(){
 			@Override
 			public void call(TerminationBroadcast c){
+				System.out.println(getName() + " got Termination Broadcast");
 				unregister();
 				terminate();
+				System.out.println(getName() + " Terminated");
 			}
 		});
+		System.out.println(this.getName() + " Initialization ended");
 	}
 
 }
