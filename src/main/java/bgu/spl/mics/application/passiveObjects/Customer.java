@@ -27,6 +27,7 @@ public class Customer {
 		this.creditCard=creditCard;
 		this.availableAmountInCreditCard=availableAmountInCreditCard;
 	}
+
 	/**
      * Retrieves the name of the customer.
      */

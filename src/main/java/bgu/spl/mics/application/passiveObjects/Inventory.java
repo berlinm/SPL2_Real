@@ -1,4 +1,5 @@
 package bgu.spl.mics.application.passiveObjects;
+import bgu.spl.mics.BookSemaphoreHolder;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.Iterator;
@@ -48,26 +49,23 @@ public class Inventory {
      * 			The first should not change the state of the inventory while the 
      * 			second should reduce by one the number of books of the desired type.
      */
-	public  OrderResult take(String book) {
-		Iterator<BookInventoryInfo> it=bookInventoryInfos.iterator();
-
-		while (it.hasNext()){
-
-			BookInventoryInfo curr=it.next();
-
-			if(curr.getBookTitle()==book){
-				curr.getsem().tryAcquire();
-				if(curr.getAmountInInventory()>0){
-					curr.takeBook();
+	public OrderResult take(String book) {
+		Iterator<BookInventoryInfo> it = bookInventoryInfos.iterator();
+		while (it.hasNext()) {
+			BookInventoryInfo curr = it.next();
+			if (curr.getBookTitle() == book) {
+				if (curr.getAmountInInventory() > 0) {
+					try {
+						curr.takeBook();
+					} catch (RuntimeException bookNotInStock) {
+						return OrderResult.NOT_IN_STOCK;
+					}
 					return OrderResult.SUCCESSFULLY_TAKEN;
 				}
 			}
 		}
 		return OrderResult.NOT_IN_STOCK;
 	}
-	
-	
-	
 	/**
      * Checks if a certain book is available in the inventory.
      * <p>
@@ -75,21 +73,19 @@ public class Inventory {
      * @return the price of the book if it is available, -1 otherwise.
      */
 	public int checkAvailabiltyAndGetPrice(String book) {
-		int price=-1;
-
-		Iterator<BookInventoryInfo> it=bookInventoryInfos.iterator();
-
+		int price = -1;
+		Iterator<BookInventoryInfo> it = bookInventoryInfos.iterator();
 		while (it.hasNext()){
-			BookInventoryInfo curr=it.next();
-			curr.getsem().tryAcquire();
-			if(curr.getAmountInInventory()>0 && curr.getBookTitle()==book){
-				price= curr.getPrice();
+			BookInventoryInfo curr = it.next();
+			if(curr.getBookTitle() == book && curr.getAmountInInventory() > 0){
+				price = curr.getPrice();
 			}
 		}
-
-		return price;
+		if (price != -1 && BookSemaphoreHolder.getInstance().tryAcquire(book)){
+			return price;
+		}
+		return -1;
 	}
-	
 	/**
      * 
      * <p>
@@ -101,13 +97,15 @@ public class Inventory {
 	public void printInventoryToFile(String filename){
 		//TODO: Implement this
 	}
+	//returns true if there is no book types reserved in the inventory, does not tell anything about how many books there are
 	public boolean isEmpty(){
-		throw new NotImplementedException();
-	}
-	public BookInventoryInfo getBookInventoryInfo(int i){
-		throw new NotImplementedException();
+		return this.bookInventoryInfos.isEmpty();
 	}
 	public int getTotalNumberOfBooks(){
-		throw new NotImplementedException();
+		int total = 0;
+		for (BookInventoryInfo book : this.bookInventoryInfos){
+			total += book.getAmountInInventory();
+		}
+		return total;
 	}
 }

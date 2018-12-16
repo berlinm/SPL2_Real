@@ -326,6 +326,7 @@ public class BookStoreRunner {
             MicroServices.add(new APIService(myhash,cs));
         }
 
+
         Vector<Thread> threads=new Vector<Thread>();
 
         threads.add(new Thread(timeService));
@@ -333,6 +334,8 @@ public class BookStoreRunner {
         for(int j=0;j<MicroServices.size();j++){
             threads.add(new Thread(MicroServices.get(j)));
         }
+
+
 
         for(int x=0;x<threads.size();x++) {
             threads.get(x).start();
@@ -346,5 +349,8 @@ public class BookStoreRunner {
 
         Inventory.getInstance().printInventoryToFile(args[1]);
         MoneyRegister.getInstance().printOrderReceipts(args[2]);
+
+
+
     }
 }

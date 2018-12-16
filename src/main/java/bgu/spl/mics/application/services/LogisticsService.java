@@ -32,7 +32,6 @@ public class LogisticsService extends MicroService {
 			Future<DeliveryVehicle> myDelivery=sendEvent(IDE);
 			DeliveryVehicle mdv=myDelivery.get();
 			mdv.deliver(ev.getCustomer().getAddress(),ev.getCustomer().getDistance());
-			terminate();
 		});
 		subscribeBroadcast(TerminationBroadcast.class, new Callback<TerminationBroadcast>(){
 			@Override

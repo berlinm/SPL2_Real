@@ -61,14 +61,24 @@ public class MessageBusImpl implements MessageBus {
 		}
 	}
 	@Override
-	public synchronized  <T> Future<T> sendEvent(Event<T> e) {
+	public synchronized  <T> Future<T> sendEvent(Event<T> e) { //changes some things to fix sone problem orel had need to be checked
 		Future<T> res=new Future<T>();
-		MicroService m = this.EventSubscribe.get(e.getClass()).remove();
-		this.EventSubscribe.get(e.getClass()).add(m);
-		srvQueue.get(m).add(e);
-		this.EventFut.put(e, res);
-		synchronized (m) {
-			m.notify();
+
+		if(this.EventSubscribe.get(e.getClass()).size()>1) {
+			MicroService m = this.EventSubscribe.get(e.getClass()).remove();
+			this.EventSubscribe.get(e.getClass()).add(m);
+			srvQueue.get(m).add(e);
+			this.EventFut.put(e, res);
+			synchronized (m) {
+				m.notify();
+			}
+
+		} else if(this.EventSubscribe.get(e.getClass()).size()<=0){
+			res.resolve(null);
+		} else {
+			MicroService m=this.EventSubscribe.get(e.getClass()).peek();
+			srvQueue.get(m).add(e);
+			this.EventFut.put(e,res);
 		}
 		return res;
 	}

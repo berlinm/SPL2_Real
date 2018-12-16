@@ -6,9 +6,12 @@ import bgu.spl.mics.Future;
 import bgu.spl.mics.Messages.TerminationBroadcast;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.Messages.TakeBookEvent;
+import bgu.spl.mics.application.passiveObjects.BookInventoryInfo;
 import bgu.spl.mics.application.passiveObjects.Inventory;
 import bgu.spl.mics.application.passiveObjects.OrderResult;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -23,31 +26,30 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class InventoryService extends MicroService{
 	Inventory inventory;
-
 	public InventoryService(String name) {
 		super(name);
 		inventory=Inventory.getInstance();
 	}
-
 	@Override
 	protected void initialize() {
 
-		subscribeEvent(CheckInventoryEvent.class,ev->{
-			int x = inventory.checkAvailabiltyAndGetPrice(ev.getName());
-			if(x == -1){
-				complete(ev,new AtomicInteger(-1));
-			}
-			else {
-				AtomicInteger atomicInteger=new AtomicInteger(x);
-				complete(ev,atomicInteger);
-			}
+		subscribeEvent(CheckInventoryEvent.class,checkInventoryEvent->{
+			System.out.println(getName()+" got new event from "+checkInventoryEvent.getName());
+			int price = inventory.checkAvailabiltyAndGetPrice(checkInventoryEvent.getName());
+			complete(checkInventoryEvent,new AtomicInteger(price));
 		});
-		subscribeEvent(TakeBookEvent.class,ev->{
-			OrderResult result=inventory.take(ev.getName());
+		subscribeEvent(TakeBookEvent.class,takeBookEvent ->{
+			System.out.println(getName()+" got event from "+takeBookEvent.getName());
+			OrderResult result = inventory.take(takeBookEvent.getName());
+			if (result == OrderResult.NOT_IN_STOCK) {
+				complete(takeBookEvent, false);
+			}
+			else complete(takeBookEvent, true);
 		});
 		subscribeBroadcast(TerminationBroadcast.class, new Callback<TerminationBroadcast>(){
 			@Override
 			public void call(TerminationBroadcast c){
+				System.out.println("All Microservices are Terminated");
 				unregister();
 				terminate();
 			}

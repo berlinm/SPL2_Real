@@ -31,42 +31,89 @@ public class SellingService extends MicroService {
 		subscribeEvent(BookOrderEvent.class, new Callback<BookOrderEvent>() {
 			@Override
 			public void call(BookOrderEvent orderEvent) {
+				System.out.println(getName()+" got new event from " +orderEvent.getClass().getName());
 				//lets check the current tick for the proccessing tick
 				Future<AtomicInteger> currentTick = sendEvent(new AskForTickEvent());
+				AtomicInteger AtomicProccessingTick = currentTick.get();
+				//if the future result is null - there are not a service available for the request - HAZLESH!
+				if (AtomicProccessingTick == null){
+					throw new TimerServiceDoesnNotExistException("Ask for tick resolved as null. TimeService does not exist?");
+				}
 				int proccessingTick = currentTick.get().intValue();
 				//lets get price
 				CheckInventoryEvent invEvent = new CheckInventoryEvent(orderEvent.getOrderedBook());
 				Future<AtomicInteger> inventoryResult = sendEvent(invEvent);
-				int price = inventoryResult.get().intValue();
-				if (price < 0){
+				AtomicInteger atomicPrice = inventoryResult.get();
+				if (atomicPrice == null){
+					throw new TimerServiceDoesnNotExistException("Ask for tick resolved as null. TimeService does not exist?");
+				}
+				if (atomicPrice.intValue() < 0){
 					System.out.println("Could not get books price");
+					complete(orderEvent, null);
+					return;
+				}
+				//lets charge the customer
+				try {
+					moneyRegister.chargeCreditCard(orderEvent.getCustomer(), atomicPrice.intValue());
+				} catch (Exception e) {
+					e.printStackTrace();
+					BookSemaphoreHolder.getInstance().release(orderEvent.getOrderedBook());
+					complete(orderEvent, null);
 					return;
 				}
 				//lets take book
-				Future<Boolean> sendRes = sendEvent(new TakeBookEvent(orderEvent.getOrderedBook()));
-				if (!sendRes.get()){
-					System.out.println("Could not take book");
+				Future<Boolean> takeRes = sendEvent(new TakeBookEvent(orderEvent.getOrderedBook()));
+				Boolean isTakeBookSucceeded = takeRes.get();
+				//if the future result is null - there are not a service available for the request - HAZLESH!
+				if (isTakeBookSucceeded == null){
+					BookSemaphoreHolder.getInstance().release(orderEvent.getOrderedBook());
+					complete(orderEvent, null);
 					return;
 				}
-				try {
-					moneyRegister.chargeCreditCard(orderEvent.getCustomer(), price);
-				} catch (Exception e) {
-					e.printStackTrace();
-					return;
+				if (!isTakeBookSucceeded){
+					throw new BookNotInInventoryException("Something wrong. selling service " + getName() + "tried to order "
+					+ orderEvent.getOrderedBook() + "And the price was not -1 even though book was not in stock or not exists.");
 				}
 				//lets get the current tick for the issued tick
-				Future<AtomicInteger> currentTick2 = sendEvent(new AskForTickEvent());
-				int issuedTick = currentTick.get().intValue();
-				OrderReceipt orderReceipt = new OrderReceipt(orders, getName(), orderEvent.getCustomer().getId(), orderEvent.getOrderedBook(), inventoryResult.get().intValue(), proccessingTick, orderEvent.getOrderTick(), issuedTick);
+				Future<AtomicInteger> issuedTick = sendEvent(new AskForTickEvent());
+				AtomicInteger AtomicIssuedTick = issuedTick.get();
+				if (isTakeBookSucceeded == null){
+					BookSemaphoreHolder.getInstance().release(orderEvent.getOrderedBook());
+					throw new TimerServiceDoesnNotExistException("Ask for tick resolved as null. TimeService does not exist?");
+				}
+				OrderReceipt orderReceipt = new OrderReceipt(orders, getName(), orderEvent.getCustomer().getId(), orderEvent.getOrderedBook(), inventoryResult.get().intValue(), proccessingTick, orderEvent.getOrderTick(), AtomicIssuedTick.intValue());
 				complete(orderEvent, orderReceipt);
 			}
 		});
 		subscribeBroadcast(TerminationBroadcast.class, new Callback<TerminationBroadcast>(){
 			@Override
 			public void call(TerminationBroadcast c){
+				System.out.println("All Microservices are Terminated");
 				unregister();
 				terminate();
 			}
 		});
+	}
+	private class BookNotInInventoryException extends RuntimeException{
+		private String doc;
+		public BookNotInInventoryException(){this.doc = "";}
+		public BookNotInInventoryException(String doc){
+			this.doc = doc;
+		}
+
+		public String getDoc() {
+			return doc;
+		}
+	}
+	private class TimerServiceDoesnNotExistException extends RuntimeException{
+		private String doc;
+		public TimerServiceDoesnNotExistException(){this.doc = "";}
+		public TimerServiceDoesnNotExistException(String doc){
+			this.doc = doc;
+		}
+
+		public String getDoc() {
+			return doc;
+		}
 	}
 }
