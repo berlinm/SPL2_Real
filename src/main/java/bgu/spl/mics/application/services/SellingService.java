@@ -41,6 +41,8 @@ public class SellingService extends MicroService {
 				}
 				int proccessingTick = currentTick.get().intValue();
 				//lets get price
+
+				System.out.println("Ready");
 				CheckInventoryEvent invEvent = new CheckInventoryEvent(orderEvent.getOrderedBook());
 				Future<AtomicInteger> inventoryResult = sendEvent(invEvent);
 				AtomicInteger atomicPrice = inventoryResult.get();

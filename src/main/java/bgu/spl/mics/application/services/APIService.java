@@ -8,6 +8,7 @@ import bgu.spl.mics.Messages.TickBroadcast;
 import bgu.spl.mics.application.passiveObjects.Customer;
 import bgu.spl.mics.application.passiveObjects.OrderReceipt;
 
+import java.util.Enumeration;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -25,8 +26,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class APIService extends MicroService{
 	private ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>> orderSchedule;
 	private Customer customer;
-	public APIService(ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>> orderSchedule,Customer customer) {
-		super("API Service");
+	public APIService(String name,ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>> orderSchedule,Customer customer) {
+		super(name);
 		if(orderSchedule.isEmpty()){
 			throw new IllegalArgumentException("Orders Schedule can't be empty ");
 		}
@@ -34,17 +35,30 @@ public class APIService extends MicroService{
 		this.customer=customer;
 	}
 
+	public ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>> getOrderSchedule() {
+		return orderSchedule;
+	}
+
 	@Override
 	protected void initialize() {
-		System.out.println("API Service "+this.getName()+" started");
+		System.out.println(this.getName()+" started");
 		Customer customer=this.customer;
-		subscribeBroadcast(TickBroadcast.class, new Callback<TickBroadcast>() {
-			@Override
-			public void call(TickBroadcast c) {
-				System.out.println(getName()+" got broadcast from" + TickBroadcast.class.getName());
+		subscribeBroadcast(TickBroadcast.class, c -> {
+				System.out.println(getName()+" got broadcast from" + c.getClass().getName()+" Curr tick: "+c.getCurrentTick());
 
-				if(orderSchedule.containsKey(c.getCurrentTick())) {
-					for (BookOrderEvent bookOrderEvent : orderSchedule.get(c.getCurrentTick())) {
+				Enumeration<AtomicInteger> emu=this.getOrderSchedule().keys();
+				AtomicInteger Key=null;
+				boolean b=false;
+				while (emu.hasMoreElements()){
+					AtomicInteger next=emu.nextElement();
+					if(next.intValue()==c.getCurrentTick()){
+						b=true;
+						Key=next;
+					}
+				}
+
+				if(b){
+					for (BookOrderEvent bookOrderEvent : orderSchedule.get(Key)) {
 						Future<OrderReceipt> result = sendEvent(bookOrderEvent);
 						if (result != null) {
 							OrderReceipt orderReceipt = result.get();
@@ -54,7 +68,6 @@ public class APIService extends MicroService{
 						}
 					}
 				}
-			}
 		});
 		subscribeBroadcast(TerminationBroadcast.class, new Callback<TerminationBroadcast>(){
 			@Override
