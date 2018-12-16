@@ -2,6 +2,10 @@ package bgu.spl.mics.application.passiveObjects;
 import bgu.spl.mics.BookSemaphoreHolder;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -95,7 +99,22 @@ public class Inventory {
      * This method is called by the main method in order to generate the output.
      */
 	public void printInventoryToFile(String filename){
-		//TODO: Implement this
+		//saving bookRemaining in a file
+		try {
+			//creating the hashmap of remaining books
+			HashMap<String, Integer> BooksRemaining = new HashMap<String, Integer>();
+			for (BookInventoryInfo b: bookInventoryInfos) {
+				BooksRemaining.put(b.getBookTitle(), b.getAmountInInventory());
+			}
+			FileOutputStream outBooks = new FileOutputStream
+					(filename);
+			ObjectOutputStream out = new ObjectOutputStream(outBooks);
+			// Method for serialization of object
+			out.writeObject(BooksRemaining);
+			out.close();
+			outBooks.close();
+		}
+		catch (IOException e){}
 	}
 	//returns true if there is no book types reserved in the inventory, does not tell anything about how many books there are
 	public boolean isEmpty(){
