@@ -323,7 +323,7 @@ public class BookStoreRunner {
                 }
             }
 
-            MicroServices.add(new APIService(myhash,cs));
+            MicroServices.add(new APIService("API Service "+i, myhash,cs));
         }
 
 
