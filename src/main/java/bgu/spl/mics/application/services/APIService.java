@@ -9,6 +9,8 @@ import bgu.spl.mics.application.passiveObjects.Customer;
 import bgu.spl.mics.application.passiveObjects.OrderReceipt;
 
 import java.util.Enumeration;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -26,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class APIService extends MicroService{
 	private ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>> orderSchedule;
 	private Customer customer;
+	private List<Future<OrderReceipt>> receiptFuture;
 	public APIService(String name,ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>> orderSchedule,Customer customer) {
 		super(name);
 		if(orderSchedule.isEmpty()){
@@ -33,6 +36,7 @@ public class APIService extends MicroService{
 		}
 		this.orderSchedule = orderSchedule;
 		this.customer=customer;
+		receiptFuture=new LinkedList<Future<OrderReceipt>>();
 	}
 
 	public ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>> getOrderSchedule() {
@@ -60,12 +64,12 @@ public class APIService extends MicroService{
 				if(b){
 					for (BookOrderEvent bookOrderEvent : orderSchedule.get(Key)) {
 						Future<OrderReceipt> result = sendEvent(bookOrderEvent);
-						if (result != null) {
-							OrderReceipt orderReceipt = result.get();
-							customer.getCustomerReceiptList().add(orderReceipt);
-							DeliveryEvent deliveryEvent = new DeliveryEvent(customer);
-							sendEvent(deliveryEvent);
-						}
+						receiptFuture.add(result);
+						//if (result != null) {
+						//	customer.getCustomerReceiptList().add(orderReceipt);
+						//	DeliveryEvent deliveryEvent = new DeliveryEvent(customer);
+						//	sendEvent(deliveryEvent);
+						//}
 					}
 				}
 		});
