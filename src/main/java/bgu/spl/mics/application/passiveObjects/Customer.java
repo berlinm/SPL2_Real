@@ -18,6 +18,15 @@ public class Customer {
 	private int creditCard;
 	private int availableAmountInCreditCard;
 
+	public Customer(int id,String name,String addreass,int distance,List<OrderReceipt> Recepits,int creditCard,int availableAmountInCreditCard){
+		this.id=id;
+		this.name=name;
+		this.addreass=addreass;
+		this.distance=distance;
+		this.Recepits=Recepits;
+		this.creditCard=creditCard;
+		this.availableAmountInCreditCard=availableAmountInCreditCard;
+	}
 	/**
      * Retrieves the name of the customer.
      */
