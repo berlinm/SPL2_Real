@@ -347,7 +347,7 @@ public class BookStoreRunner {
 
         Inventory.getInstance().printInventoryToFile(args[1]);
         MoneyRegister.getInstance().printOrderReceipts(args[2]);
-        
+
 
 
     }
