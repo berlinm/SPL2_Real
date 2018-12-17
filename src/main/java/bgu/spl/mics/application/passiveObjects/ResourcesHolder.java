@@ -1,6 +1,7 @@
 package bgu.spl.mics.application.passiveObjects;
 
 import bgu.spl.mics.Future;
+import bgu.spl.mics.MySemaphore;
 
 import java.util.concurrent.*;
 
@@ -18,10 +19,11 @@ public class ResourcesHolder {
 	private BlockingQueue<DeliveryVehicle> freeVehicles;
 	private BlockingDeque<Future<DeliveryVehicle>> waitingFutures;
 	private Semaphore _sem;
-
+	private MySemaphore mySemaphore;
 	private ResourcesHolder(){
 		freeVehicles = new LinkedBlockingQueue<DeliveryVehicle>();
 		waitingFutures = new LinkedBlockingDeque<Future<DeliveryVehicle>>();
+		this.mySemaphore = new MySemaphore();
 	}
 	/**
 	 * Retrieves the single instance of this class.
@@ -38,6 +40,7 @@ public class ResourcesHolder {
      * 			{@link DeliveryVehicle} when completed.   
      */
 	public Future<DeliveryVehicle> acquireVehicle() {
+		mySemaphore.acquireAn_Acquire();
 		if (this._sem == null)
 			throw new NotInitializedSemaphore();
 		Future<DeliveryVehicle> future=new Future<DeliveryVehicle>();
@@ -47,6 +50,7 @@ public class ResourcesHolder {
 		else {
 			waitingFutures.addLast(future);
 		}
+		mySemaphore.releaseAn_Acquire();
 		return future;
 	}
 	/**
@@ -56,6 +60,7 @@ public class ResourcesHolder {
      * @param vehicle	{@link DeliveryVehicle} to be released.
      */
 	public void releaseVehicle(DeliveryVehicle vehicle) {
+		this.mySemaphore.acquire_A_Release();
 		if (this._sem == null)
 			throw new NotInitializedSemaphore();
 		if(waitingFutures.size()!=0) {
@@ -65,7 +70,7 @@ public class ResourcesHolder {
 			freeVehicles.add(vehicle);
 			_sem.release();
 		}
-
+		this.mySemaphore.releaseA_Release();
 	}
 	
 	/**
