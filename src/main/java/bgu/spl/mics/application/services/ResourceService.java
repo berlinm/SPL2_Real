@@ -3,6 +3,7 @@ package bgu.spl.mics.application.services;
 import bgu.spl.mics.Callback;
 import bgu.spl.mics.Future;
 import bgu.spl.mics.Messages.InviteDriverEvent;
+import bgu.spl.mics.Messages.ReleaseVhicleEvent;
 import bgu.spl.mics.Messages.TerminationBroadcast;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.passiveObjects.DeliveryVehicle;
@@ -29,6 +30,10 @@ public class ResourceService extends MicroService{
 	@Override
 	protected void initialize() {
 		System.out.println(this.getName() + " Initialization started");
+		subscribeEvent(ReleaseVhicleEvent.class,ev->{
+			this.resourcesHolder.releaseVehicle(ev.getMydev());
+			complete(ev,true);
+				});
 		subscribeEvent(InviteDriverEvent.class,ev->{
 			System.out.println(getName() + " got InviteDriverEvent");
 			Future<DeliveryVehicle> result=resourcesHolder.acquireVehicle();

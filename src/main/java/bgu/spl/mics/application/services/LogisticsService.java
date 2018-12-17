@@ -4,6 +4,7 @@ import bgu.spl.mics.Callback;
 import bgu.spl.mics.Messages.DeliveryEvent;
 import bgu.spl.mics.Future;
 import bgu.spl.mics.Messages.InviteDriverEvent;
+import bgu.spl.mics.Messages.ReleaseVhicleEvent;
 import bgu.spl.mics.Messages.TerminationBroadcast;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.passiveObjects.DeliveryVehicle;
@@ -32,6 +33,9 @@ public class LogisticsService extends MicroService {
 			Future<DeliveryVehicle> myDelivery=sendEvent(IDE);
 			DeliveryVehicle mdv=myDelivery.get();
 			mdv.deliver(ev.getCustomer().getAddress(),ev.getCustomer().getDistance());
+			ReleaseVhicleEvent releaseVhicleEvent=new ReleaseVhicleEvent(mdv);
+			sendEvent(releaseVhicleEvent);
+
 			complete(ev, true);
 			System.out.println(getName() + " finished executing DeliveryEvent from " + ev.getSenderName() +  "( Customer: " + ev.getCustomer().getName() + ")");
 		});
