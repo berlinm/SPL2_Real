@@ -77,7 +77,6 @@ public class SellingService extends MicroService {
 				do {
 					DeliveryEvent deliveryEvent = new DeliveryEvent(orderEvent.getCustomer(), getName());
 					deliveryRes = sendEvent(deliveryEvent);
-					System.out.println("if this shows up a lot of times than we have an infinite loop");
 				} while (!deliveryRes.get());
 				System.out.println(getName() + " finished executing BookOrderEvent from " + orderEvent.getSenderName() + "(Book: " + orderEvent.getOrderedBook() + ", ordered tick:" + orderEvent.getOrderTick() + ")");
 				complete(orderEvent, orderReceipt);
@@ -110,6 +109,7 @@ public class SellingService extends MicroService {
 		private String doc;
 		public TimerServiceDoesnNotExistException(){this.doc = "";}
 		public TimerServiceDoesnNotExistException(String doc){
+			System.out.println(this.doc);
 			this.doc = doc;
 		}
 

@@ -44,8 +44,8 @@ public class ResourceService extends MicroService{
 			@Override
 			public void call(TerminationBroadcast c){
 				System.out.println(getName() + " got Termination Broadcast");
-				unregister();
 				terminate();
+				unregister();
 				System.out.println(getName() + " Terminated");
 			}
 		});

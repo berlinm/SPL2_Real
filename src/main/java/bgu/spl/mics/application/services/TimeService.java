@@ -56,6 +56,7 @@ public class TimeService extends MicroService{
 		this.m_Timer.schedule(new TimerTask() {
 			@Override
 			public void run() {
+				System.out.println();
 				if (currentTick < duration)
 				{
 					sendBroadcast(new TickBroadcast(currentTick));

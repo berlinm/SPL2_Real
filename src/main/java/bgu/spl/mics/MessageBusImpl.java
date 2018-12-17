@@ -38,7 +38,7 @@ public class MessageBusImpl implements MessageBus {
 	}
 
 	@Override
-	public  void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
+	public synchronized void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
 		if(BroadcastSubscribe.containsKey(type)) {
 			BroadcastSubscribe.get(type).add(m);
 			System.out.println("service: " + m.getName() + " subscribed broadcast" + type);
@@ -56,15 +56,13 @@ public class MessageBusImpl implements MessageBus {
 	}
 	@Override
 	public void sendBroadcast(Broadcast b) {
-		if (b instanceof TerminationBroadcast)
-			System.out.println("Broadcast sent: " + b.getClass());
 		if(BroadcastSubscribe.containsKey(b.getClass())) {
 			for (MicroService m : BroadcastSubscribe.get(b.getClass())) {
 				try {
 					srvQueue.get(m).add(b);
 					System.out.println("Micro service: " + m.getName() + " Notified by broadcast: " + b.getClass());
 					synchronized (this.srvQueue.get(m)){
-						this.srvQueue.get(m).notify();
+						this.srvQueue.get(m).notifyAll();
 					}
 				} catch (NullPointerException exception) {}
 			}
@@ -74,22 +72,33 @@ public class MessageBusImpl implements MessageBus {
 	public <T> Future<T> sendEvent(Event<T> e) { //changes some things to fix sone problem orel had need to be checked
 		Future<T> res=new Future<T>();
 		if(this.EventSubscribe.get(e.getClass()).size() > 1) {
-			MicroService m = this.EventSubscribe.get(e.getClass()).remove();
-			this.EventSubscribe.get(e.getClass()).add(m);
-			srvQueue.get(m).add(e);
-			this.EventFut.put(e, res);
-			synchronized (this.srvQueue.get(m)) {
-				this.srvQueue.get(m).notify();
+			for (int i = 0; i < EventSubscribe.get(e.getClass()).size(); i++){
+				MicroService m = this.EventSubscribe.get(e.getClass()).remove();
+				this.EventSubscribe.get(e.getClass()).add(m);
+				if (!m.isTerminated()){
+					srvQueue.get(m).add(e);
+					this.EventFut.put(e, res);
+					synchronized (this.srvQueue.get(m)) {
+						this.srvQueue.get(m).notifyAll();
+					}
+					break;
+				}
 			}
+			res.resolve(null);
 		} else if(this.EventSubscribe.get(e.getClass()).size()==0){
 			//then no microservice to send the event to
 			res.resolve(null);
 		} else {
 			MicroService m=this.EventSubscribe.get(e.getClass()).peek();
-			srvQueue.get(m).add(e);
-			this.EventFut.put(e, res);
-			synchronized (this.srvQueue.get(m)) {
-				this.srvQueue.get(m).notify();
+			if (!m.isTerminated()){
+				srvQueue.get(m).add(e);
+				this.EventFut.put(e, res);
+				synchronized (this.srvQueue.get(m)) {
+					this.srvQueue.get(m).notifyAll();
+				}
+			}
+			else {
+				res.resolve(null);
 			}
 		}
 		return res;
@@ -101,11 +110,16 @@ public class MessageBusImpl implements MessageBus {
 	}
 	@Override
 	public synchronized void unregister(MicroService m) {
+		for (Message message: srvQueue.get(m)){
+			if (message instanceof Event){
+				EventFut.get((Event)message).resolve(null);
+			}
+		}
 		//lets remove all broadcasts subscriptions
 		System.out.println("Micro service: " + m.getName() + "unregistered from bus");
         for (Class c:this.BroadcastSubscribe.keySet()){
             for (MicroService microService:this.BroadcastSubscribe.get(c)){
-                if (microService.equals(m)){
+                if (microService == m){
                     this.BroadcastSubscribe.get(c).remove(m);
                 }
             }
@@ -113,7 +127,7 @@ public class MessageBusImpl implements MessageBus {
         //lets remove all event subscriptions
         for (Class c:this.EventSubscribe.keySet()){
             for (MicroService microService:this.EventSubscribe.get(c)){
-                if (microService.equals(m)){
+                if (microService == m){
                     this.EventSubscribe.get(c).remove(m);
                 }
             }
