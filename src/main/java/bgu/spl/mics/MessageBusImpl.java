@@ -74,8 +74,9 @@ public class MessageBusImpl implements MessageBus {
 			this.EventSubscribe.get(e.getClass()).add(m);
 			srvQueue.get(m).add(e);
 			this.EventFut.put(e, res);
-			if (m instanceof TimeService)
+			if (m instanceof TimeService) {
 				System.out.println("Time service has job to do");
+			}
 			synchronized (m) {
 				m.notify();
 			}
