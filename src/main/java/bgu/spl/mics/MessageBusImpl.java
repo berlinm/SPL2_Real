@@ -72,6 +72,7 @@ public class MessageBusImpl implements MessageBus {
 	public <T> Future<T> sendEvent(Event<T> e) { //changes some things to fix sone problem orel had need to be checked
 		Future<T> res=new Future<T>();
 		if(this.EventSubscribe.get(e.getClass()).size() > 1) {
+			boolean isFoundMicroService = false;
 			for (int i = 0; i < EventSubscribe.get(e.getClass()).size(); i++){
 				MicroService m = this.EventSubscribe.get(e.getClass()).remove();
 				this.EventSubscribe.get(e.getClass()).add(m);
@@ -81,10 +82,12 @@ public class MessageBusImpl implements MessageBus {
 					synchronized (this.srvQueue.get(m)) {
 						this.srvQueue.get(m).notifyAll();
 					}
+					isFoundMicroService = true;
 					break;
 				}
 			}
-			res.resolve(null);
+			if (!isFoundMicroService)
+				res.resolve(null);
 		} else if(this.EventSubscribe.get(e.getClass()).size()==0){
 			//then no microservice to send the event to
 			res.resolve(null);
@@ -110,11 +113,6 @@ public class MessageBusImpl implements MessageBus {
 	}
 	@Override
 	public synchronized void unregister(MicroService m) {
-		for (Message message: srvQueue.get(m)){
-			if (message instanceof Event){
-				EventFut.get((Event)message).resolve(null);
-			}
-		}
 		//lets remove all broadcasts subscriptions
 		System.out.println("Micro service: " + m.getName() + "unregistered from bus");
         for (Class c:this.BroadcastSubscribe.keySet()){
