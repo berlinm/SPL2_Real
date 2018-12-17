@@ -30,7 +30,11 @@ public class LogisticsService extends MicroService {
 		subscribeEvent(DeliveryEvent.class,ev->{
 			System.out.println(getName() + " got DeliveryEvent from " + ev.getSenderName() +  "( Customer: " + ev.getCustomer().getName() + ")");
 			InviteDriverEvent IDE=new InviteDriverEvent(this.getName());
+			//now we got myDelivery that is the result of the InviteDriverEvent (that will be resolved to a future,
+			//when resource service will end its run
 			Future<Future<DeliveryVehicle>> myDelivery=sendEvent(IDE);
+			//now we got mdv which is a future (that we got from resource holder) that
+			//when one will be free, will resolve to a vehicle
 			Future<DeliveryVehicle> mdv=myDelivery.get();
 			DeliveryVehicle deliveryVehicle = mdv.get();
 			deliveryVehicle.deliver(ev.getCustomer().getAddress(),ev.getCustomer().getDistance());

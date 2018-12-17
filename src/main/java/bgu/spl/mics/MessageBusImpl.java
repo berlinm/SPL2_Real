@@ -29,9 +29,9 @@ public class MessageBusImpl implements MessageBus {
 	}
 
 	@Override
-	public  <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {
+	public <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {
 		if(EventSubscribe.containsKey(type)){
-	    EventSubscribe.get(type).add(m);
+	    	EventSubscribe.get(type).add(m);
 		}else{
 			EventSubscribe.put(type,new LinkedBlockingQueue<MicroService>());
 			EventSubscribe.get(type).add(m);
@@ -49,11 +49,9 @@ public class MessageBusImpl implements MessageBus {
 	}
 
 	@Override
-	public <T> void complete(Event<T> e, T result) {
-		if (this.EventFut.get(e) != null){
+	public synchronized <T> void complete(Event<T> e, T result) {
 			this.EventFut.get(e).resolve(result);
 			this.EventFut.remove(e);
-		}
 	}
 	@Override
 	public void sendBroadcast(Broadcast b) {
