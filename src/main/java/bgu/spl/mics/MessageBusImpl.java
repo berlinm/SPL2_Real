@@ -55,6 +55,8 @@ public class MessageBusImpl implements MessageBus {
 	}
 	@Override
 	public void sendBroadcast(Broadcast b) {
+		if (b instanceof TerminationBroadcast)
+			System.out.println("Broadcast sent: " + b.getClass());
 		if(BroadcastSubscribe.containsKey(b.getClass())) {
 			for (MicroService m : BroadcastSubscribe.get(b.getClass())) {
 				try {

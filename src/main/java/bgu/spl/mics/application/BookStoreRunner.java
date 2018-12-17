@@ -1,27 +1,20 @@
 package bgu.spl.mics.application;
 
 
-import bgu.spl.mics.BookSemaphoreHolder;
-import bgu.spl.mics.MessageBus;
-import bgu.spl.mics.MessageBusImpl;
+import bgu.spl.mics.*;
 import bgu.spl.mics.Messages.BookOrderEvent;
-import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.passiveObjects.*;
 import bgu.spl.mics.application.services.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.sun.org.apache.xml.internal.security.Init;
 
 import java.io.*;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Vector;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.io.*;
 
 /** This is the Main class of the application. You should parse the input file,
  * create the different instances of the objects, and run the system.
@@ -334,9 +327,17 @@ public class BookStoreRunner {
             threads.add(new Thread(MicroServices.get(j)));
         }
         threads.add(new Thread(timeService));
-        for(int x=0;x<threads.size();x++) {
+        for(int x=0;x<threads.size() - 1;x++) {
             threads.get(x).start();
+            unInitializedServicesCounter.getInstance().newService();
         }
+        while (!unInitializedServicesCounter.getInstance().AllInitialized()){
+            try {
+                Thread.sleep(50);
+            }
+            catch (Exception e){}
+        }
+        threads.get(threads.size() - 1).start();
         for (int i=0;i<threads.size();i++) {
             try{
                 threads.get(i).join();
