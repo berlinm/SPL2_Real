@@ -37,21 +37,6 @@ public class TimeService extends MicroService{
 	@Override
 	protected void initialize() {
 		System.out.println(this.getName() + " Initialization started");
-		this.m_Timer = new Timer();
-		this.m_Timer.schedule(new TimerTask() {
-			@Override
-			public void run() {
-				if (currentTick < duration)
-				{
-					sendBroadcast(new TickBroadcast(currentTick));
-					currentTick++;
-				}
-				else {
-					sendBroadcast(new TerminationBroadcast());
-					m_Timer.cancel();
-				}
-			}
-		}, 0, this.speed);
 		subscribeEvent(AskForTickEvent.class, new Callback<AskForTickEvent>() {
 			@Override
 			public void call(AskForTickEvent c) {
@@ -67,6 +52,21 @@ public class TimeService extends MicroService{
 				System.out.println("Time service is terminated");
 			}
 		});
+		this.m_Timer = new Timer();
+		this.m_Timer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				if (currentTick < duration)
+				{
+					sendBroadcast(new TickBroadcast(currentTick));
+					currentTick++;
+				}
+				else {
+					sendBroadcast(new TerminationBroadcast());
+					m_Timer.cancel();
+				}
+			}
+		}, 0, this.speed);
 		System.out.println(this.getName() + " Initialization ended");
 	}
 }

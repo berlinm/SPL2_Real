@@ -23,7 +23,8 @@ public class MessageBusImpl implements MessageBus {
 		private static MessageBusImpl instance=new MessageBusImpl();
 	}
 	public static MessageBusImpl getInstance(){
-		return SingletonHolder.instance;
+		MessageBusImpl instance = SingletonHolder.instance;
+		return instance;
 	}
 
 	@Override
@@ -62,8 +63,8 @@ public class MessageBusImpl implements MessageBus {
 				try {
 					srvQueue.get(m).add(b);
 					System.out.println("Micro service: " + m.getName() + " Notified by broadcast: " + b.getClass());
-					synchronized (m){
-						m.notify();
+					synchronized (this.srvQueue.get(m)){
+						this.srvQueue.get(m).notify();
 					}
 				} catch (NullPointerException exception) {}
 			}
@@ -77,8 +78,8 @@ public class MessageBusImpl implements MessageBus {
 			this.EventSubscribe.get(e.getClass()).add(m);
 			srvQueue.get(m).add(e);
 			this.EventFut.put(e, res);
-			synchronized (m) {
-				m.notify();
+			synchronized (this.srvQueue.get(m)) {
+				this.srvQueue.get(m).notify();
 			}
 		} else if(this.EventSubscribe.get(e.getClass()).size()==0){
 			//then no microservice to send the event to
@@ -87,8 +88,8 @@ public class MessageBusImpl implements MessageBus {
 			MicroService m=this.EventSubscribe.get(e.getClass()).peek();
 			srvQueue.get(m).add(e);
 			this.EventFut.put(e, res);
-			synchronized (m) {
-				m.notify();
+			synchronized (this.srvQueue.get(m)) {
+				this.srvQueue.get(m).notify();
 			}
 		}
 		return res;
@@ -129,9 +130,10 @@ public class MessageBusImpl implements MessageBus {
 		}
 		while (this.srvQueue.get(m).isEmpty()) {
 			try {
-				synchronized(m) {
+				synchronized(this.srvQueue.get(m)) {
 					System.out.println("service: " + m.getName() + " goes waits for notify");
-					m.wait();
+					this.srvQueue.get(m).wait();
+					System.out.println("service: " + m.getName() + " exited wait (was notified)");
 				}
 			}catch (Exception e){e.printStackTrace();}
 		}
