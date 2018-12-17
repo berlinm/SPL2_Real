@@ -75,8 +75,10 @@ public class MessageBusImpl implements MessageBus {
 				MicroService m = this.EventSubscribe.get(e.getClass()).remove();
 				this.EventSubscribe.get(e.getClass()).add(m);
 				if (!m.isTerminated()){
-					srvQueue.get(m).add(e);
-					this.EventFut.put(e, res);
+					synchronized (srvQueue){
+						srvQueue.get(m).add(e);
+						this.EventFut.put(e, res);
+					}
 					synchronized (this.srvQueue.get(m)) {
 						this.srvQueue.get(m).notifyAll();
 					}
