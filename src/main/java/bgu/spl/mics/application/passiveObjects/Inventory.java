@@ -57,7 +57,7 @@ public class Inventory {
 		Iterator<BookInventoryInfo> it = bookInventoryInfos.iterator();
 		while (it.hasNext()) {
 			BookInventoryInfo curr = it.next();
-			if (curr.getBookTitle() == book) {
+			if (curr.getBookTitle().equals(book)) {
 				if (curr.getAmountInInventory() > 0) {
 					try {
 						curr.takeBook();
@@ -85,7 +85,7 @@ public class Inventory {
 				price = curr.getPrice();
 			}
 		}
-		if (price != -1){ //&& BookSemaphoreHolder.getInstance().tryAcquire(book)){
+		if (price != -1 && BookSemaphoreHolder.getInstance().tryAcquire(book)){
 			return price;
 		}
 		return -1;

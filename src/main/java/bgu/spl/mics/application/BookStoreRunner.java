@@ -1,6 +1,7 @@
 package bgu.spl.mics.application;
 
 
+import bgu.spl.mics.BookSemaphoreHolder;
 import bgu.spl.mics.MessageBus;
 import bgu.spl.mics.MessageBusImpl;
 import bgu.spl.mics.Messages.BookOrderEvent;
@@ -17,6 +18,7 @@ import java.util.LinkedList;
 import java.util.Vector;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.io.*;
@@ -273,6 +275,7 @@ public class BookStoreRunner {
         for(int i=0;i<books.length;i++){
             BookInventoryInfo newbook=new BookInventoryInfo(books[i].getBookTitle(),books[i].getAmount(),books[i].getPrice());
             ToLoad[i]=newbook;
+            BookSemaphoreHolder.getInstance().add(books[i].getBookTitle(), books[i].getAmount());
         }
         inventory.load(ToLoad);
 
@@ -334,10 +337,15 @@ public class BookStoreRunner {
         for(int x=0;x<threads.size();x++) {
             threads.get(x).start();
         }
-
         for (int i=0;i<threads.size();i++) {
-            try{ threads.get(i).join();}
-            catch (Exception e) {e.printStackTrace();}
+            try{
+                System.out.println("Thread" + i + " joining");
+                threads.get(i).join();
+            }
+            catch (Exception e) {
+                System.out.println("PRINTING STACK TRACE");
+                e.printStackTrace();
+            }
         }
         //Output 1: Customers
         try {

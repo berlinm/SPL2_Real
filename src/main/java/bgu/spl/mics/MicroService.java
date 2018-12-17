@@ -166,12 +166,17 @@ public abstract class MicroService implements Runnable {
             try
             {
                 Message m = Bus.awaitMessage(this);
-                this.MessageHash.get(m.getClass()).call(m);
+                if (m != null)
+                    this.MessageHash.get(m.getClass()).call(m);
             }
             catch (InterruptedException e){
                 this.terminate();
             }
         }
+        System.out.println(this.getName() + " finished");
+    }
+    public boolean isTerminated(){
+        return this.terminated;
     }
     protected final void unregister(){
         MessageBusImpl.getInstance().unregister(this);

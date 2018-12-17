@@ -32,7 +32,7 @@ public class APIService extends MicroService{
 	public APIService(String name,ConcurrentHashMap<AtomicInteger, BlockingQueue<BookOrderEvent>> orderSchedule,Customer customer) {
 		super(name);
 		if(orderSchedule.isEmpty()){
-			throw new IllegalArgumentException("Orders Schedule can't be empty ");
+			throw new IllegalArgumentException("Orders Schedule can't be empty");
 		}
 		this.orderSchedule = orderSchedule;
 		this.customer=customer;

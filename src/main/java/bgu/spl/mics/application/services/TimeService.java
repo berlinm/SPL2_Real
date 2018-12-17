@@ -31,7 +31,7 @@ public class TimeService extends MicroService{
 		super("Global Timer");
 		this.currentTick = 0;
 		this.duration = duration;
-		this.speed = speed;
+		this.speed = 100;
 	}
 	//TODO: comment inside
 	@Override
@@ -48,8 +48,8 @@ public class TimeService extends MicroService{
 				}
 				else {
 					sendBroadcast(new TerminationBroadcast());
-					unregister();
-					terminate();
+					m_Timer.cancel();
+					System.out.println("Time service is terminated");
 				}
 			}
 		}, 0, this.speed);
@@ -58,6 +58,13 @@ public class TimeService extends MicroService{
 			public void call(AskForTickEvent c) {
 				System.out.println("Timer received AskForTickEvent, Current Tick" + currentTick);
 				complete(c, new AtomicInteger(currentTick));
+			}
+		});
+		subscribeBroadcast(TerminationBroadcast.class, new Callback<TerminationBroadcast>() {
+			@Override
+			public void call(TerminationBroadcast c) {
+				unregister();
+				terminate();
 			}
 		});
 		System.out.println(this.getName() + " Initialization ended");

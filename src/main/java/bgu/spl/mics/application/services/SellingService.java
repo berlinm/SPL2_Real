@@ -34,12 +34,11 @@ public class SellingService extends MicroService {
 			public void call(BookOrderEvent orderEvent) {
 				System.out.println(getName() + " got new BookOrderEvent from " + orderEvent.getSenderName() + "(Book: " + orderEvent.getOrderedBook() + ", ordered tick:" + orderEvent.getOrderTick() + ")");
 				int proccessingTick = sendEvent(new AskForTickEvent()).get().intValue();
+				//lets get price (-1 if absent)
 				CheckInventoryEvent invEvent = new CheckInventoryEvent(orderEvent.getOrderedBook(), getName());
 				Future<AtomicInteger> checkInventoryResult = sendEvent(invEvent);
 				AtomicInteger atomicPrice = checkInventoryResult.get();
-				if (atomicPrice == null){
-					throw new TimerServiceDoesnNotExistException("Ask for tick resolved as null. TimeService does not exist?");
-				}
+				System.out.println(atomicPrice.intValue());
 				if (atomicPrice.intValue() < 0){
 					System.out.println("Could not get books price");
 					complete(orderEvent, null);
@@ -49,7 +48,7 @@ public class SellingService extends MicroService {
 				try {
 					moneyRegister.chargeCreditCard(orderEvent.getCustomer(), atomicPrice.intValue());
 				} catch (Exception e) {
-					e.printStackTrace();
+					//Customer has no money for this book
 					BookSemaphoreHolder.getInstance().release(orderEvent.getOrderedBook());
 					complete(orderEvent, null);
 					return;
@@ -78,9 +77,10 @@ public class SellingService extends MicroService {
 				do {
 					DeliveryEvent deliveryEvent = new DeliveryEvent(orderEvent.getCustomer(), getName());
 					deliveryRes = sendEvent(deliveryEvent);
+					System.out.println("if this shows up a lot of times than we have an infinite loop");
 				} while (!deliveryRes.get());
-				complete(orderEvent, orderReceipt);
 				System.out.println(getName() + " finished executing BookOrderEvent from " + orderEvent.getSenderName() + "(Book: " + orderEvent.getOrderedBook() + ", ordered tick:" + orderEvent.getOrderTick() + ")");
+				complete(orderEvent, orderReceipt);
 			}
 		});
 		subscribeBroadcast(TerminationBroadcast.class, new Callback<TerminationBroadcast>(){
@@ -99,6 +99,7 @@ public class SellingService extends MicroService {
 		public BookNotInInventoryException(){this.doc = "";}
 		public BookNotInInventoryException(String doc){
 			this.doc = doc;
+			System.out.println(this.doc);
 		}
 
 		public String getDoc() {

@@ -6,7 +6,9 @@ import java.util.concurrent.Semaphore;
 public class BookSemaphoreHolder {
     private static BookSemaphoreHolder instance = new BookSemaphoreHolder();
     ConcurrentHashMap<String, Semaphore> bookLocker;
-    private BookSemaphoreHolder(){}
+    private BookSemaphoreHolder(){
+        this.bookLocker = new ConcurrentHashMap<>();
+    }
     public void add(String bookTitle, int permits){
         this.bookLocker.putIfAbsent(bookTitle, new Semaphore(permits));
     }

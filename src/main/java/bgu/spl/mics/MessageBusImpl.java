@@ -66,17 +66,12 @@ public class MessageBusImpl implements MessageBus {
 	}
 	@Override
 	public <T> Future<T> sendEvent(Event<T> e) { //changes some things to fix sone problem orel had need to be checked
-		if (e instanceof AskForTickEvent)
-			System.out.println("Ask for tick event now sent to the buss");
 		Future<T> res=new Future<T>();
-		if(this.EventSubscribe.get(e.getClass()).size()>1) {
+		if(this.EventSubscribe.get(e.getClass()).size() > 1) {
 			MicroService m = this.EventSubscribe.get(e.getClass()).remove();
 			this.EventSubscribe.get(e.getClass()).add(m);
 			srvQueue.get(m).add(e);
 			this.EventFut.put(e, res);
-			if (m instanceof TimeService) {
-				System.out.println("Time service has job to do");
-			}
 			synchronized (m) {
 				m.notify();
 			}
@@ -122,8 +117,6 @@ public class MessageBusImpl implements MessageBus {
 	//but needs to be checked again
 	@Override
 	public Message awaitMessage(MicroService m) throws InterruptedException {
-		if (m instanceof TimeService)
-			System.out.println("Time service awaits message");
 		if(!this.srvQueue.containsKey(m)){
 			this.srvQueue.put(m ,new LinkedBlockingQueue<Message>());
 		}
@@ -131,7 +124,7 @@ public class MessageBusImpl implements MessageBus {
 			try {
 				synchronized(m) {
 					m.wait();
-				}
+			}
 			}catch (Exception e){e.printStackTrace();}
 		}
 		for (Message message: srvQueue.get(m)) {
@@ -140,6 +133,6 @@ public class MessageBusImpl implements MessageBus {
 				return message;
 			}
 		}
-			return this.srvQueue.get(m).remove();
+		return this.srvQueue.get(m).remove();
 	}
 }

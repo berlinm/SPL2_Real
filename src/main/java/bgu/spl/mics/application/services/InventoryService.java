@@ -33,6 +33,7 @@ public class InventoryService extends MicroService{
 			System.out.println(getName() + " got new CheckInventoryEvent from " + checkInventoryEvent.getSender());
 			int price = inventory.checkAvailabiltyAndGetPrice(checkInventoryEvent.getBookName());
 			complete(checkInventoryEvent,new AtomicInteger(price));
+			System.out.println(getName() + " finished executing CheckInventoryEvent from " + checkInventoryEvent.getSender());
 		});
 		subscribeEvent(TakeBookEvent.class, new Callback<TakeBookEvent>() {
 					@Override
