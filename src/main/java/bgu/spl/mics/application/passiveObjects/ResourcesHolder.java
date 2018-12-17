@@ -63,8 +63,9 @@ public class ResourcesHolder {
 			future.resolve(vehicle);
 		} else {
 			freeVehicles.add(vehicle);
+			_sem.release();
 		}
-		_sem.release();
+
 	}
 	
 	/**

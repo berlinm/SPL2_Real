@@ -43,7 +43,8 @@ public class InventoryService extends MicroService{
 						if (result == OrderResult.NOT_IN_STOCK) {
 							complete(takeBookEvent, false);
 						}
-						else complete(takeBookEvent, true);
+						else
+							complete(takeBookEvent, true);
 						System.out.println(getName() + " finished executing TakeBookEvent from " + takeBookEvent.getSenderName() + " on book " + takeBookEvent.getBookName());
 					}
 				});

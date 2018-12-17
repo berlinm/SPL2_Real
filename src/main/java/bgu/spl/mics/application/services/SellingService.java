@@ -38,7 +38,6 @@ public class SellingService extends MicroService {
 				CheckInventoryEvent invEvent = new CheckInventoryEvent(orderEvent.getOrderedBook(), getName());
 				Future<AtomicInteger> checkInventoryResult = sendEvent(invEvent);
 				AtomicInteger atomicPrice = checkInventoryResult.get();
-				System.out.println(atomicPrice.intValue());
 				if (atomicPrice.intValue() < 0){
 					System.out.println("Could not get books price");
 					complete(orderEvent, null);
@@ -74,10 +73,11 @@ public class SellingService extends MicroService {
 				}
 				OrderReceipt orderReceipt = new OrderReceipt(orders, getName(), orderEvent.getCustomer().getId(), orderEvent.getOrderedBook(), checkInventoryResult.get().intValue(), proccessingTick , orderEvent.getOrderTick(), issuedTick.get().intValue());
 				Future<Boolean> deliveryRes = null;
-				do {
-					DeliveryEvent deliveryEvent = new DeliveryEvent(orderEvent.getCustomer(), getName());
-					deliveryRes = sendEvent(deliveryEvent);
-				} while (!deliveryRes.get());
+				DeliveryEvent deliveryEvent = new DeliveryEvent(orderEvent.getCustomer(), getName());
+				deliveryRes = sendEvent(deliveryEvent);
+				if (!deliveryRes.get()){
+					throw new RuntimeException();
+				}
 				System.out.println(getName() + " finished executing BookOrderEvent from " + orderEvent.getSenderName() + "(Book: " + orderEvent.getOrderedBook() + ", ordered tick:" + orderEvent.getOrderTick() + ")");
 				complete(orderEvent, orderReceipt);
 			}

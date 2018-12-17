@@ -31,7 +31,7 @@ public class TimeService extends MicroService{
 		super("Global Timer");
 		this.currentTick = 0;
 		this.duration = duration;
-		this.speed = 10;
+		this.speed = 100;
 	}
 	//TODO: comment inside
 	@Override
@@ -40,7 +40,6 @@ public class TimeService extends MicroService{
 		subscribeEvent(AskForTickEvent.class, new Callback<AskForTickEvent>() {
 			@Override
 			public void call(AskForTickEvent c) {
-				System.out.println("Timer received AskForTickEvent, Current Tick" + currentTick);
 				complete(c, new AtomicInteger(currentTick));
 			}
 		});

@@ -29,13 +29,13 @@ public class LogisticsService extends MicroService {
 		System.out.println(this.getName() + " Initialization started");
 		subscribeEvent(DeliveryEvent.class,ev->{
 			System.out.println(getName() + " got DeliveryEvent from " + ev.getSenderName() +  "( Customer: " + ev.getCustomer().getName() + ")");
-			InviteDriverEvent IDE=new InviteDriverEvent();
-			Future<DeliveryVehicle> myDelivery=sendEvent(IDE);
-			DeliveryVehicle mdv=myDelivery.get();
-			mdv.deliver(ev.getCustomer().getAddress(),ev.getCustomer().getDistance());
-			ReleaseVhicleEvent releaseVhicleEvent=new ReleaseVhicleEvent(mdv);
+			InviteDriverEvent IDE=new InviteDriverEvent(this.getName());
+			Future<Future<DeliveryVehicle>> myDelivery=sendEvent(IDE);
+			Future<DeliveryVehicle> mdv=myDelivery.get();
+			DeliveryVehicle deliveryVehicle = mdv.get();
+			deliveryVehicle.deliver(ev.getCustomer().getAddress(),ev.getCustomer().getDistance());
+			ReleaseVhicleEvent releaseVhicleEvent=new ReleaseVhicleEvent(deliveryVehicle);
 			sendEvent(releaseVhicleEvent);
-
 			complete(ev, true);
 			System.out.println(getName() + " finished executing DeliveryEvent from " + ev.getSenderName() +  "( Customer: " + ev.getCustomer().getName() + ")");
 		});

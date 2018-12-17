@@ -1,6 +1,7 @@
 package bgu.spl.mics;
 
 import bgu.spl.mics.Messages.AskForTickEvent;
+import bgu.spl.mics.Messages.ReleaseVhicleEvent;
 import bgu.spl.mics.Messages.TerminationBroadcast;
 import bgu.spl.mics.application.services.TimeService;
 
@@ -41,11 +42,9 @@ public class MessageBusImpl implements MessageBus {
 	public synchronized void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
 		if(BroadcastSubscribe.containsKey(type)) {
 			BroadcastSubscribe.get(type).add(m);
-			System.out.println("service: " + m.getName() + " subscribed broadcast" + type);
 		}else {
 			BroadcastSubscribe.put(type,new LinkedBlockingDeque<MicroService>());
 			BroadcastSubscribe.get(type).add(m);
-			System.out.println("service: " + m.getName() + " subscribed broadcast" + type);
 		}
 	}
 
@@ -60,7 +59,6 @@ public class MessageBusImpl implements MessageBus {
 			for (MicroService m : BroadcastSubscribe.get(b.getClass())) {
 				try {
 					srvQueue.get(m).add(b);
-					System.out.println("Micro service: " + m.getName() + " Notified by broadcast: " + b.getClass());
 					synchronized (this.srvQueue.get(m)){
 						this.srvQueue.get(m).notifyAll();
 					}
@@ -91,8 +89,9 @@ public class MessageBusImpl implements MessageBus {
 		} else if(this.EventSubscribe.get(e.getClass()).size()==0){
 			//then no microservice to send the event to
 			res.resolve(null);
-		} else {
-			MicroService m=this.EventSubscribe.get(e.getClass()).peek();
+		}
+		else {
+			MicroService m = this.EventSubscribe.get(e.getClass()).peek();
 			if (!m.isTerminated()){
 				srvQueue.get(m).add(e);
 				this.EventFut.put(e, res);
@@ -114,7 +113,6 @@ public class MessageBusImpl implements MessageBus {
 	@Override
 	public synchronized void unregister(MicroService m) {
 		//lets remove all broadcasts subscriptions
-		System.out.println("Micro service: " + m.getName() + "unregistered from bus");
         for (Class c:this.BroadcastSubscribe.keySet()){
             for (MicroService microService:this.BroadcastSubscribe.get(c)){
                 if (microService == m){
@@ -136,22 +134,18 @@ public class MessageBusImpl implements MessageBus {
 	//but needs to be checked again
 	@Override
 	public Message awaitMessage(MicroService m) throws InterruptedException {
-		System.out.println("service: " + m.getName() + " entered bus.awaitMessage");
 		if(!this.srvQueue.containsKey(m)){
 			this.srvQueue.put(m ,new LinkedBlockingQueue<Message>());
 		}
 		while (this.srvQueue.get(m).isEmpty()) {
 			try {
 				synchronized(this.srvQueue.get(m)) {
-					System.out.println("service: " + m.getName() + " goes waits for notify");
 					this.srvQueue.get(m).wait();
-					System.out.println("service: " + m.getName() + " exited wait (was notified)");
 				}
 			}catch (Exception e){e.printStackTrace();}
 		}
 		for (Message message: srvQueue.get(m)) {
 			if (message instanceof TerminationBroadcast){
-				System.out.println("Micro service " + m.getName() + " got a termination broadcast (from bus)" );
 				srvQueue.get(m).remove(message);
 				return message;
 			}

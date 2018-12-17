@@ -31,13 +31,15 @@ public class ResourceService extends MicroService{
 	protected void initialize() {
 		System.out.println(this.getName() + " Initialization started");
 		subscribeEvent(ReleaseVhicleEvent.class,ev->{
+			System.out.println(getName() + "got ReleaseVehicleEvent");
 			this.resourcesHolder.releaseVehicle(ev.getMydev());
 			complete(ev,true);
-				});
+			System.out.println(getName() + "finished executing ReleaseVehicleEvent");
+		});
 		subscribeEvent(InviteDriverEvent.class,ev->{
-			System.out.println(getName() + " got InviteDriverEvent");
-			Future<DeliveryVehicle> result=resourcesHolder.acquireVehicle();
-			complete(ev,result.get());
+			System.out.println(getName() + " got InviteDriverEvent from" + ev.getSrc());
+			Future<DeliveryVehicle> result = resourcesHolder.acquireVehicle();
+			complete(ev,result);
 			System.out.println(getName() + " finished executing InviteDriverEvent");
 		});
 		subscribeBroadcast(TerminationBroadcast.class, new Callback<TerminationBroadcast>(){
