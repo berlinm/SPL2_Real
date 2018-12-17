@@ -27,7 +27,9 @@ public class MoneyRegister implements Serializable {
      */
 	private  static class SingletonHolder{
 		private static MoneyRegister instance=new MoneyRegister();
-
+	}
+	private MoneyRegister(){
+		this.orderReceipts = new LinkedBlockingQueue<>();
 	}
 	public static MoneyRegister getInstance() {
 		return SingletonHolder.instance;
@@ -90,5 +92,9 @@ public class MoneyRegister implements Serializable {
 			outBooks.close();
 		}
 		catch (IOException e){}
+	}
+
+	public BlockingQueue<OrderReceipt> getOrderReceipts() {
+		return orderReceipts;
 	}
 }

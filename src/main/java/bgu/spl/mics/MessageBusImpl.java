@@ -40,9 +40,11 @@ public class MessageBusImpl implements MessageBus {
 	public  void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
 		if(BroadcastSubscribe.containsKey(type)) {
 			BroadcastSubscribe.get(type).add(m);
+			System.out.println("service: " + m.getName() + " subscribed broadcast" + type);
 		}else {
 			BroadcastSubscribe.put(type,new LinkedBlockingDeque<MicroService>());
 			BroadcastSubscribe.get(type).add(m);
+			System.out.println("service: " + m.getName() + " subscribed broadcast" + type);
 		}
 	}
 
@@ -57,10 +59,11 @@ public class MessageBusImpl implements MessageBus {
 			for (MicroService m : BroadcastSubscribe.get(b.getClass())) {
 				try {
 					srvQueue.get(m).add(b);
-					synchronized (m) {
+					System.out.println("Micro service: " + m.getName() + " Notified by broadcast: " + b.getClass());
+					synchronized (m){
 						m.notify();
 					}
-				} catch (NullPointerException exception) { /*Other thread deleted m*/ }
+				} catch (NullPointerException exception) {}
 			}
 		}
 	}
@@ -96,6 +99,7 @@ public class MessageBusImpl implements MessageBus {
 	@Override
 	public synchronized void unregister(MicroService m) {
 		//lets remove all broadcasts subscriptions
+		System.out.println("Micro service: " + m.getName() + "unregistered from bus");
         for (Class c:this.BroadcastSubscribe.keySet()){
             for (MicroService microService:this.BroadcastSubscribe.get(c)){
                 if (microService.equals(m)){
@@ -117,18 +121,21 @@ public class MessageBusImpl implements MessageBus {
 	//but needs to be checked again
 	@Override
 	public Message awaitMessage(MicroService m) throws InterruptedException {
+		System.out.println("service: " + m.getName() + " entered bus.awaitMessage");
 		if(!this.srvQueue.containsKey(m)){
 			this.srvQueue.put(m ,new LinkedBlockingQueue<Message>());
 		}
 		while (this.srvQueue.get(m).isEmpty()) {
 			try {
 				synchronized(m) {
+					System.out.println("service: " + m.getName() + " goes waits for notify");
 					m.wait();
-			}
+				}
 			}catch (Exception e){e.printStackTrace();}
 		}
 		for (Message message: srvQueue.get(m)) {
 			if (message instanceof TerminationBroadcast){
+				System.out.println("Micro service " + m.getName() + " got a termination broadcast (from bus)" );
 				srvQueue.get(m).remove(message);
 				return message;
 			}

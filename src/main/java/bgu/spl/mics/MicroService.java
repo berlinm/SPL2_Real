@@ -115,7 +115,6 @@ public abstract class MicroService implements Runnable {
      * @param b The broadcast message to send
      */
     protected final void sendBroadcast(Broadcast b) {
-
         MessageBus messageBus=MessageBusImpl.getInstance();
         messageBus.sendBroadcast(b);
     }

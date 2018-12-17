@@ -3,6 +3,8 @@ package bgu.spl.mics.application.passiveObjects;
 import bgu.spl.mics.*;
 import com.sun.org.apache.xml.internal.security.signature.ReferenceNotInitializedException;
 
+import java.io.Serializable;
+
 /**
  * Passive data-object representing a receipt that should 
  * be sent to a customer after the completion of a BookOrderEvent.
@@ -10,7 +12,7 @@ import com.sun.org.apache.xml.internal.security.signature.ReferenceNotInitialize
  * <p>
  * You may add fields and methods to this class as you see fit (including public methods).
  */
-public class OrderReceipt {
+public class OrderReceipt implements Serializable {
 	private int OrderId;
 	private String seller;
 	private  int customerId;

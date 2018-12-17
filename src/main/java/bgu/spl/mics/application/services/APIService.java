@@ -6,6 +6,7 @@ import bgu.spl.mics.Messages.DeliveryEvent;
 import bgu.spl.mics.Messages.TerminationBroadcast;
 import bgu.spl.mics.Messages.TickBroadcast;
 import bgu.spl.mics.application.passiveObjects.Customer;
+import bgu.spl.mics.application.passiveObjects.MoneyRegister;
 import bgu.spl.mics.application.passiveObjects.OrderReceipt;
 
 import java.util.Enumeration;
@@ -64,7 +65,11 @@ public class APIService extends MicroService{
 				System.out.println(getName() + " got Termination Broadcast");
 				for(int i=0;i<receiptFuture.size();i++){
 					if(receiptFuture.get(i).isDone()) {
-						customer.getCustomerReceiptList().add(receiptFuture.get(i).get());
+						OrderReceipt receipt = receiptFuture.get(i).get();
+						if (receipt != null) {
+							customer.getCustomerReceiptList().add(receipt);
+							MoneyRegister.getInstance().getOrderReceipts().add(receipt);
+						}
 					}
 				}
 				unregister();

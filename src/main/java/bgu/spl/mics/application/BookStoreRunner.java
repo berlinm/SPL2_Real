@@ -330,17 +330,17 @@ public class BookStoreRunner {
             MicroServices.add(new APIService("API Service " + i, TickToOrderListHashMap,cs));
         }
         Vector<Thread> threads = new Vector<Thread>();
-        threads.add(new Thread(timeService));
         for(int j = 0; j < MicroServices.size(); j++){
             threads.add(new Thread(MicroServices.get(j)));
         }
+        threads.add(new Thread(timeService));
         for(int x=0;x<threads.size();x++) {
             threads.get(x).start();
         }
         for (int i=0;i<threads.size();i++) {
             try{
-                System.out.println("Thread" + i + " joining");
                 threads.get(i).join();
+                System.out.println("Thread" + i + " joined");
             }
             catch (Exception e) {
                 System.out.println("PRINTING STACK TRACE");
@@ -358,7 +358,7 @@ public class BookStoreRunner {
         outCustomers.close();
         }
         catch (IOException ex) {
-            System.out.println("IOException is caught");
+            System.out.println(ex.getMessage());
         }
 
         //Output 2: Books

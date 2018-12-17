@@ -31,7 +31,7 @@ public class TimeService extends MicroService{
 		super("Global Timer");
 		this.currentTick = 0;
 		this.duration = duration;
-		this.speed = 100;
+		this.speed = 10;
 	}
 	//TODO: comment inside
 	@Override
@@ -49,7 +49,6 @@ public class TimeService extends MicroService{
 				else {
 					sendBroadcast(new TerminationBroadcast());
 					m_Timer.cancel();
-					System.out.println("Time service is terminated");
 				}
 			}
 		}, 0, this.speed);
@@ -65,6 +64,7 @@ public class TimeService extends MicroService{
 			public void call(TerminationBroadcast c) {
 				unregister();
 				terminate();
+				System.out.println("Time service is terminated");
 			}
 		});
 		System.out.println(this.getName() + " Initialization ended");
