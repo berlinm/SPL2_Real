@@ -32,7 +32,8 @@ public class MessageBusImpl implements MessageBus {
 	public <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {
 		if(EventSubscribe.containsKey(type)){
 	    	EventSubscribe.get(type).add(m);
-		}else{
+		}
+		else{
 			EventSubscribe.put(type,new LinkedBlockingQueue<MicroService>());
 			EventSubscribe.get(type).add(m);
 		}
@@ -50,8 +51,8 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public synchronized <T> void complete(Event<T> e, T result) {
-			this.EventFut.get(e).resolve(result);
-			this.EventFut.remove(e);
+				this.EventFut.get(e).resolve(result);
+				this.EventFut.remove(e);
 	}
 	@Override
 	public void sendBroadcast(Broadcast b) {
@@ -72,13 +73,14 @@ public class MessageBusImpl implements MessageBus {
 		if(this.EventSubscribe.get(e.getClass()).size() > 1) {
 			boolean isFoundMicroService = false;
 			for (int i = 0; i < EventSubscribe.get(e.getClass()).size(); i++){
-				MicroService m = this.EventSubscribe.get(e.getClass()).remove();
-				this.EventSubscribe.get(e.getClass()).add(m);
+				MicroService m;
+				synchronized (srvQueue){
+					m = this.EventSubscribe.get(e.getClass()).remove();
+					this.EventSubscribe.get(e.getClass()).add(m);
+				}
 				if (!m.isTerminated()){
-					synchronized (srvQueue){
-						srvQueue.get(m).add(e);
-						this.EventFut.put(e, res);
-					}
+					srvQueue.get(m).add(e);
+					this.EventFut.put(e, res);
 					synchronized (this.srvQueue.get(m)) {
 						this.srvQueue.get(m).notifyAll();
 					}
